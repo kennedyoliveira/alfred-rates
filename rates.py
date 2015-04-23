@@ -98,7 +98,7 @@ def is_float(val):
         return False
 
 
-def validate_currencies(dst, currencies, src, wf):
+def validate_currencies(dst, src, currencies, wf):
     """
     Utility method to check if the currencies are valid.
     """
@@ -132,6 +132,64 @@ def search_rate(dst, src, wf):
     return rate
 
 
+def process_conversion(src, dst, val, currencies, wf):
+    """
+    Process the conversion from src to dst using the info withing currencies and return 0 with sucess and
+    != 0 otherwise.
+
+    :param wf: Alfred Workflow helper instance
+    :type wf: Workflow
+    :param currencies: Dictionary with info about currencies
+    :type currencies: dict
+    :type val: float
+    :param val: Value to be converted
+    :type dst: str
+    :param dst: Destiny currency CODE, like BRL or CLP
+    :type src: str
+    :param src: Source currency CODE, like BRL or CLP
+    """
+    ####################################################################################################
+    # Validate the currencies to check if its a currency or not
+    ####################################################################################################
+    if not validate_currencies(dst, src, currencies, wf):
+        return 1
+
+    rate = search_rate(dst, src, wf)
+
+    if rate == -1:
+        wf.add_item('No rating found for the especified currencies...', icon=ICON_ERROR)
+        wf.send_feedback()
+        return 1
+
+    #
+    # Gets the currency info
+    #
+    cur_src_name = currencies[src]['Name']
+    cur_dst_name = currencies[dst]['Name']
+    flag_file_icon = wf.workflowfile('flags/{}'.format(currencies[dst]['Flag']))
+
+    if val:
+        converted_rate = val * rate
+
+        if converted_rate < 0.01:
+            converted_rate_formated = "{}".format(converted_rate)
+        else:
+            converted_rate_formated = "{:.5f}".format(converted_rate)
+
+        sub_title = '{} ({}) -> {} ({}) with rate {}'.format(src, cur_src_name, dst, cur_dst_name, rate)
+
+        wf.add_item(converted_rate_formated, sub_title, valid=True, arg=converted_rate_formated, icon=flag_file_icon)
+        wf.send_feedback()
+        return 0
+    else:
+        # Just show the ratio
+        sub_title = 'FROM ({}) TO {} ({}): {}'.format(cur_src_name, dst, cur_dst_name, rate)
+
+        wf.add_item(sub_title, 'Converted the from the default currency', valid=True, arg='{}'.format(rate))
+        wf.send_feedback()
+        return 0
+
+
 def main(wf):
     """
     Execute the script
@@ -141,6 +199,9 @@ def main(wf):
     # Load the curency list
     currencies = load_currency_info(wf)
 
+    ############################################################################################
+    # Build the parser for the arguments
+    ############################################################################################
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--set-default-currency', dest='default_currency', default=None)
@@ -149,9 +210,9 @@ def main(wf):
 
     args = parser.parse_args(wf.args)
 
-    #
+    ############################################################################################
     # Update the default currency
-    #
+    ############################################################################################
     if args.default_currency:
         if args.default_currency.upper() not in currencies:
             wf.add_item('You entered a invalid currency...', icon=ICON_ERROR)
@@ -161,6 +222,9 @@ def main(wf):
         wf.settings[SETTINGS_DEFAULT_CURRENCY] = args.default_currency.upper()
         return 0
 
+    ############################################################################################
+    # Get the default currency
+    ############################################################################################
     if args.get_default_currency:
         if SETTINGS_DEFAULT_CURRENCY in wf.settings:
             wf.add_item('Your default currency is: {}'.format(wf.settings[SETTINGS_DEFAULT_CURRENCY]), icon=ICON_INFO)
@@ -171,15 +235,15 @@ def main(wf):
             wf.send_feedback()
         return 0
 
-    #
+    ############################################################################################
     # Chech for convert actions
-    #
+    ############################################################################################
     query = args.query
 
     if query and len(query) == 1 and query[0] in currencies:
-        #
+        ############################################################################################
         # Show the currency against the default currency or USD if none specified
-        #
+        ############################################################################################
         currency = query[0].upper()
 
         default_currency = 'USD'
@@ -188,24 +252,13 @@ def main(wf):
         if SETTINGS_DEFAULT_CURRENCY in wf.settings:
             default_currency = wf.settings[SETTINGS_DEFAULT_CURRENCY]
 
-        rate = get_rates(default_currency, currency)
-
-        log.debug('Current rate {}'.format(rate))
-
-        sub_title = 'FROM ({}) TO {} ({}): {}'.format(currencies[default_currency]['Name'],
-                                                      currency,
-                                                      currencies[currency]['Name'],
-                                                      rate)
-
-        wf.add_item(sub_title, 'Converted the from the default currency', valid=True, arg='{}'.format(rate))
-        wf.send_feedback()
-        return 0
+        return process_conversion(default_currency, currency, None, currencies, wf)
     elif args.query and len(args.query) == 3:
-        ##################################################
+        ####################################################################################################
         # Convert the currencies
-        ##################################################
+        ####################################################################################################
         if not is_float(query[0]):
-            wf.add_item("The value typed ins't a valid currency value: {}".format(query[0]), icon=ICON_ERROR)
+            wf.add_item("The value typed isn't a valid currency value: {}".format(query[0]), icon=ICON_ERROR)
             wf.send_feedback()
             return 1
 
@@ -213,42 +266,17 @@ def main(wf):
         src = query[1].upper()
         dst = query[2].upper()
 
-        #
-        # Validate the currencies to check if its a currency or not
-        #
-        if not validate_currencies(dst, currencies, src, wf):
-            return 1
-
-        rate = search_rate(dst, src, wf)
-
-        if rate == -1:
-            wf.add_item('No rating found for the especified currencies...', icon=ICON_ERROR)
-            wf.send_feedback()
-            return 1
-
-        converted_rate = val * rate
-
-        if converted_rate < 0.01:
-            converted_rate_formated = "{}".format(converted_rate)
-        else:
-            converted_rate_formated = "{:.5f}".format(converted_rate)
-
-        sub_title = '{} ({}) -> {} ({}) with rate {}'.format(src, currencies[src]['Name'], dst, currencies[dst]['Name'],
-                                                             rate)
-
-        wf.add_item(converted_rate_formated, sub_title, valid=True, arg=converted_rate_formated,
-                    icon=wf.workflowfile('flags/{}'.format(currencies[dst]['Flag'])))
-
-        wf.send_feedback()
+        return process_conversion(src, dst, val, currencies, wf)
     elif args.query and len(args.query) == 2:
+        ####################################################################################################
+        # Convert a value to the default currency or from the default currency to the other especified
+        ####################################################################################################
         if not (is_float(query[0]) or is_float(query[1])):
             wf.add_item("The value typed ins't a valid currency value", icon=ICON_ERROR)
             wf.send_feedback()
             return 1
 
         currency_dst = wf.settings.get(SETTINGS_DEFAULT_CURRENCY, 'USD')
-        currency_src = None
-        val = None
 
         # First parameter is the value, means should convert from local default currency to the one specified in the query
         if is_float(query[0]) and not is_float(query[1]):
@@ -264,30 +292,7 @@ def main(wf):
             wf.send_feedback()
             return 1
 
-        if not validate_currencies(currency_dst, currencies, currency_src, wf):
-            return 1
-
-        rate = search_rate(currency_dst, currency_src, wf)
-
-        if rate == -1:
-            wf.add_item('No rating found for the especified currencies...', icon=ICON_ERROR)
-            wf.send_feedback()
-            return 1
-
-        converted_rate = val * rate
-
-        if converted_rate < 0.01:
-            converted_rate_formated = "{}".format(converted_rate)
-        else:
-            converted_rate_formated = "{:.5f}".format(converted_rate)
-
-        sub_title = '{} ({}) -> {} ({}) with rate {}'.format(currency_src, currencies[currency_src]['Name'],
-                                                             currency_dst,
-                                                             currencies[currency_dst]['Name'], rate)
-
-        wf.add_item(converted_rate_formated, sub_title, valid=True, arg=converted_rate_formated)
-        wf.send_feedback()
-        return 0
+        return process_conversion(currency_src, currency_dst, val, currencies, wf)
     else:
         wf.add_item('Wrong input', 'Type in the following format VAL FROM-CURRENCY TO-CURRENCY', icon=ICON_WARNING)
         wf.send_feedback()

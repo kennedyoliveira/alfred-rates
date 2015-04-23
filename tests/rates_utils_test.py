@@ -52,10 +52,11 @@ class RatesCurrencyTest(unittest.TestCase):
 
     def test_validate_currencies(self):
         currencies = rates.get_currencies()
-        self.assertTrue(rates.validate_currencies('BRL', currencies, 'USD', self.wf))
-        self.assertFalse(rates.validate_currencies('BRL', currencies, 'USDD', self.wf))
+        self.assertTrue(rates.validate_currencies('BRL', 'USD', currencies, self.wf))
+        self.assertFalse(rates.validate_currencies('BRL', 'USDD', currencies, self.wf))
         self.assertEqual(len(self.wf._items), 1)
         self.assertEqual(self.wf._items[0].title, 'USDD not found')
+        self.assertFalse(rates.validate_currencies('BRLL', 'USD', currencies, self.wf))
 
 
 if __name__ == '__main__':

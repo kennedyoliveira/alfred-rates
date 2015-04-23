@@ -3,8 +3,8 @@
 __author__ = 'Kennedy'
 
 import unittest
-
 import sys
+
 import rates
 from mock import patch
 from workflow import Workflow
@@ -44,6 +44,13 @@ class TestRatesConvert(unittest.TestCase):
             rates.main(self.wf)
         self.assertEqual(len(self.wf._items), 1)
         self.assertNotEqual(self.wf._items[0].subtitle.find('CLP (Chilean peso) -> BRL (Brazilian real) with rate'), -1)
+
+    def test_conver_from_default_to_other_without_values(self):
+        self.wf.settings[rates.SETTINGS_DEFAULT_CURRENCY] = 'USD'
+        with patch.object(sys, 'argv', ['program', 'BRL']):
+            rates.main(self.wf)
+        self.assertTrue(len(self.wf._items), 1)
+        self.assertNotEqual(self.wf._items[0].title.find('FROM (United States dollar) TO BRL (Brazilian real)'), -1)
 
 
 if __name__ == '__main__':
