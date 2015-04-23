@@ -200,6 +200,23 @@
 		<dict>
 			<key>config</key>
 			<dict>
+				<key>applescript</key>
+				<string>on alfred_script(q)
+	tell application "Alfred 2" to search "ratesetcurrency "
+end alfred_script</string>
+				<key>cachescript</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.applescript</string>
+			<key>uid</key>
+			<string>01C60AA3-0141-4EC6-90EE-FA44E282E38E</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
 				<key>argumenttype</key>
 				<integer>2</integer>
 				<key>escaping</key>
@@ -235,17 +252,35 @@
 		<dict>
 			<key>config</key>
 			<dict>
-				<key>applescript</key>
-				<string>on alfred_script(q)
-	tell application "Alfred 2" to search "ratesetcurrency "
-end alfred_script</string>
-				<key>cachescript</key>
+				<key>argumenttype</key>
+				<integer>2</integer>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>keyword</key>
+				<string>rateclear</string>
+				<key>queuedelaycustom</key>
+				<integer>3</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<true/>
+				<key>queuedelaymode</key>
+				<integer>0</integer>
+				<key>queuemode</key>
+				<integer>1</integer>
+				<key>script</key>
+				<string>python rates.py --clear</string>
+				<key>subtext</key>
+				<string>Use this command when you get a new version, to clear old data.</string>
+				<key>title</key>
+				<string>Clears all the cached data</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
 				<false/>
 			</dict>
 			<key>type</key>
-			<string>alfred.workflow.action.applescript</string>
+			<string>alfred.workflow.input.scriptfilter</string>
 			<key>uid</key>
-			<string>01C60AA3-0141-4EC6-90EE-FA44E282E38E</string>
+			<string>366C8EBD-D31C-44A6-8E63-90CF8838AE91</string>
 			<key>version</key>
 			<integer>0</integer>
 		</dict>
@@ -263,6 +298,11 @@ end alfred_script</string>
 		<dict>
 			<key>ypos</key>
 			<real>250</real>
+		</dict>
+		<key>366C8EBD-D31C-44A6-8E63-90CF8838AE91</key>
+		<dict>
+			<key>ypos</key>
+			<real>370</real>
 		</dict>
 		<key>36D37106-AAA9-4529-A787-585838D4F161</key>
 		<dict>

@@ -1,10 +1,14 @@
+import sys
+
 import rates
+
 
 __author__ = 'Kennedy'
 
 import unittest
 
 from workflow import Workflow
+from mock import patch
 
 
 class RatesCurrencyTest(unittest.TestCase):
@@ -52,6 +56,16 @@ class RatesCurrencyTest(unittest.TestCase):
         self.assertEqual(len(self.wf._items), 1)
         self.assertEqual(self.wf._items[0].title, 'USDD not found')
         self.assertFalse(rates.validate_currencies('BRLL', 'USD', currencies, self.wf))
+
+    def test_clear_caches(self):
+        self.wf.cache_data('test_cache', 'testing cache')
+        self.wf.store_data('test_store', 'testing store')
+        with patch.object(sys, 'argv', 'program --clear'.split()):
+            rates.main(self.wf)
+        self.assertEqual(len(self.wf._items), 1)
+        self.assertEqual(self.wf._items[0].title, 'Caches cleared!')
+        self.assertIsNone(self.wf.stored_data('test_store'))
+        self.assertIsNone(self.wf.cached_data('test_cache'))
 
 
 if __name__ == '__main__':

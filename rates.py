@@ -206,6 +206,7 @@ def main(wf):
 
     parser.add_argument('--set-default-currency', dest='default_currency', default=None)
     parser.add_argument('--get-default-currency', dest='get_default_currency', default=None, action='store_true')
+    parser.add_argument('--clear', default=None, action='store_true')
     parser.add_argument('query', nargs='*')
 
     args = parser.parse_args(wf.args)
@@ -235,6 +236,15 @@ def main(wf):
             wf.send_feedback()
         return 0
 
+    ############################################################################################
+    # Clean the caches
+    ############################################################################################
+    if args.clear:
+        wf.clear_cache()
+        wf.clear_data()
+        wf.add_item('Caches cleared!', icon=ICON_INFO)
+        wf.send_feedback()
+        return 0
     ############################################################################################
     # Chech for convert actions
     ############################################################################################

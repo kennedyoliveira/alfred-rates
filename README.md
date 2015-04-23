@@ -19,6 +19,7 @@ Convert between many currencies using the YQL (Yahoo! Query Language) to get the
 
 `ratesetcurrency` -> Set the default currency, for use with the comands `rate <VAL> <CUR DST>` and `rate <CUR SRC> <VAL>`
 
+`rateclear` -> Clears all the cached data, used when there is a new version for removing olds caches.
 
 ##### TODO List #####
  - [X] Add more currencies info (The script will work, just need some info to validate).
