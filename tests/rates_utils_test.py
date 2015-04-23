@@ -14,6 +14,7 @@ class RatesCurrencyTest(unittest.TestCase):
         self.wf.clear_settings()
         self.wf.clear_data()
         self.wf.clear_cache()
+        rates.log = self.wf.logger
 
     def tearDown(self):
         pass
@@ -38,6 +39,23 @@ class RatesCurrencyTest(unittest.TestCase):
             self.assertTrue(info['Flag'], 'No flag for the currency {}'.format(info))
             self.assertTrue(os.path.exists(os.path.join('flags', info['Flag'])),
                             'No flag file for the currency {}'.format(info))
+
+    def test_is_float(self):
+        tests = [(1, True),
+                 ('asd', False),
+                 (1.5, True),
+                 ('1', True),
+                 ('1', True)]
+
+        for test in tests:
+            self.assertEqual(rates.is_float(test[0]), test[1])
+
+    def test_validate_currencies(self):
+        currencies = rates.get_currencies()
+        self.assertTrue(rates.validate_currencies('BRL', currencies, 'USD', self.wf))
+        self.assertFalse(rates.validate_currencies('BRL', currencies, 'USDD', self.wf))
+        self.assertEqual(len(self.wf._items), 1)
+        self.assertEqual(self.wf._items[0].title, 'USDD not found')
 
 
 if __name__ == '__main__':

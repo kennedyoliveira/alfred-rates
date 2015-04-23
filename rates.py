@@ -15,6 +15,7 @@ from workflow import Workflow, web, ICON_ERROR, ICON_WARNING, ICON_INFO
 
 # Settings info
 SETTINGS_DEFAULT_CURRENCY = 'default_currency'
+STORED_DATA_CURRENCY_INFO = 'currency_info'
 
 log = None
 
@@ -77,10 +78,10 @@ def load_currency_info(wf):
 
     :type wf: Workflow
     """
-    moedas = wf.stored_data('moedas')
+    moedas = wf.stored_data(STORED_DATA_CURRENCY_INFO)
     if not moedas:
         moedas = get_currencies()
-        wf.store_data('moedas', moedas)
+        wf.store_data(STORED_DATA_CURRENCY_INFO, moedas)
     return moedas
 
 
@@ -97,17 +98,17 @@ def is_float(val):
         return False
 
 
-def validate_currencies(dst, moedas, src, wf):
+def validate_currencies(dst, currencies, src, wf):
     """
     Utility method to check if the currencies are valid.
     """
-    if src not in moedas:
+    if src not in currencies:
         err_msg = '{} not found'.format(src)
         log.error(err_msg)
         wf.add_item(err_msg)
         wf.send_feedback()
         return False
-    elif dst not in moedas:
+    elif dst not in currencies:
         err_msg = '{} not found'.format(dst)
         log.error(err_msg)
         wf.add_item(err_msg)
