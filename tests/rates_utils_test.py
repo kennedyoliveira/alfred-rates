@@ -36,7 +36,7 @@ class RatesCurrencyTest(unittest.TestCase):
             self.assertTrue(info['Country'], 'No Country for currency {}'.format(info))
             self.assertIn('Flag', info, 'No Flag for currency {}'.format(info))
             self.assertTrue(info['Flag'], 'No flag for the currency {}'.format(info))
-            self.assertTrue(os.path.exists(os.path.join('../', 'flags', info['Flag'])),
+            self.assertTrue(os.path.exists(os.path.join('flags', info['Flag'])),
                             'No flag file for the currency {}'.format(info))
 
 
