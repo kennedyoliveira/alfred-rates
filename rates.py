@@ -127,8 +127,8 @@ def search_rate(dst, src, wf):
     def get_rates_wrapper():
         return get_rates(src, dst)
 
-    # Search and caches the current rates for the currency
-    rate = wf.cached_data(conv, get_rates_wrapper, max_age=600)
+    # Search and caches for 1 hour the current rates for the currency
+    rate = wf.cached_data(conv, get_rates_wrapper, max_age=3600)
     return rate
 
 

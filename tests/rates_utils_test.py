@@ -3,7 +3,6 @@ import rates
 __author__ = 'Kennedy'
 
 import unittest
-import os
 
 from workflow import Workflow
 
@@ -21,7 +20,6 @@ class RatesCurrencyTest(unittest.TestCase):
 
     def testLoadCurrencyInfo(self):
         currency_info = rates.get_currencies()
-        self.assertEquals(len(currency_info), 3)
 
         # Checks if all itens have all info that is used by the script
         for currency, info in currency_info.iteritems():
@@ -36,9 +34,6 @@ class RatesCurrencyTest(unittest.TestCase):
             self.assertIn('Country', info, 'No Country for currency {}'.format(info))
             self.assertTrue(info['Country'], 'No Country for currency {}'.format(info))
             self.assertIn('Flag', info, 'No Flag for currency {}'.format(info))
-            self.assertTrue(info['Flag'], 'No flag for the currency {}'.format(info))
-            self.assertTrue(os.path.exists(os.path.join('flags', info['Flag'])),
-                            'No flag file for the currency {}'.format(info))
 
     def test_is_float(self):
         tests = [(1, True),

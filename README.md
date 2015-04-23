@@ -21,6 +21,6 @@ Convert between many currencies using the YQL (Yahoo! Query Language) to get the
 
 
 ##### TODO List #####
- - [ ] Add more currencies info (The script will work, just need some info to validate).
- - [ ] Refactor the script (I'm not a pro python coder, just started to learn and did this as first project).
+ - [X] Add more currencies info (The script will work, just need some info to validate).
+ - [X] Refactor the script (I'm not a pro python coder, just started to learn and did this as first project).
  - [ ] Show currencies while user is typing, to help when you don't remember the currency code.
