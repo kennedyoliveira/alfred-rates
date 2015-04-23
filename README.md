@@ -1,6 +1,7 @@
 # Alfred Rates #
 [![Build Status](https://travis-ci.org/kennedyoliveira/alfred-rates.svg?branch=master)](https://travis-ci.org/kennedyoliveira/alfred-rates)
 [![Code Health](https://landscape.io/github/kennedyoliveira/alfred-rates/master/landscape.svg?style=flat)](https://landscape.io/github/kennedyoliveira/alfred-rates/master)
+[![Coverage Status](https://coveralls.io/repos/kennedyoliveira/alfred-rates/badge.svg?branch=master)](https://coveralls.io/r/kennedyoliveira/alfred-rates?branch=master)
 
 #### Rates exchange for alfred. ####
 
