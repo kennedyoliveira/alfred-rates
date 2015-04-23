@@ -17,6 +17,7 @@ class TestRatesConvert(unittest.TestCase):
         self.wf.clear_data()
         self.wf.clear_cache()
         self.wf.settings[rates.SETTINGS_DEFAULT_CURRENCY] = 'BRL'
+        rates.log = self.wf.logger
 
     def tearDown(self):
         pass
@@ -45,13 +46,30 @@ class TestRatesConvert(unittest.TestCase):
         self.assertEqual(len(self.wf._items), 1)
         self.assertNotEqual(self.wf._items[0].subtitle.find('CLP (Chilean peso) -> BRL (Brazilian real) with rate'), -1)
 
-    def test_conver_from_default_to_other_without_values(self):
+    def test_convert_from_default_to_other_without_values(self):
         self.wf.settings[rates.SETTINGS_DEFAULT_CURRENCY] = 'USD'
         with patch.object(sys, 'argv', ['program', 'BRL']):
             rates.main(self.wf)
         self.assertTrue(len(self.wf._items), 1)
         self.assertNotEqual(self.wf._items[0].title.find('FROM (United States dollar) TO BRL (Brazilian real)'), -1)
 
+    def test_invalid_currency_number_to_convert(self):
+        with patch.object(sys, 'argv', 'program zupa BRL USD'.split()):
+            rates.main(self.wf)
+        self.assertTrue(len(self.wf._items), 1)
+        self.assertEqual(self.wf._items[0].title, "The value typed isn't a valid currency value: zupa")
+
+    def test_invalid_currency_number_to_convert_using_default(self):
+        with patch.object(sys, 'argv', 'program zupa BRL'.split()):
+            rates.main(self.wf)
+        self.assertTrue(len(self.wf._items), 1)
+        self.assertEqual(self.wf._items[0].title, "The value typed ins't a valid currency value")
+
+    def test_invalid_argument(self):
+        with patch.object(sys, 'argv', 'program zupa'.split()):
+            rates.main(self.wf)
+        self.assertTrue(len(self.wf._items), 1)
+        self.assertEqual(self.wf._items[0].subtitle, "Type in the following format VAL FROM-CURRENCY TO-CURRENCY")
 
 if __name__ == '__main__':
     unittest.main()

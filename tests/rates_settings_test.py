@@ -17,6 +17,7 @@ class TestRatesSettings(unittest.TestCase):
     def setUp(self):
         self.wf = Workflow()
         self.wf.clear_settings()
+        rates.log = self.wf.logger
 
     def tearDown(self):
         pass
@@ -33,6 +34,22 @@ class TestRatesSettings(unittest.TestCase):
             rates.main(self.wf)
 
         self.assertEqual(self.wf.settings[rates.SETTINGS_DEFAULT_CURRENCY], 'BRL')
+
+    def test_set_invalid_currency(self):
+        with patch.object(sys, 'argv', 'program --set-default-currency zupa'.split()):
+            rates.main(self.wf)
+
+        self.assertEqual(len(self.wf._items), 1)
+        self.assertEqual(self.wf._items[0].title, 'You entered a invalid currency...')
+
+    def test_get_default_currency(self):
+        self.wf.settings[rates.SETTINGS_DEFAULT_CURRENCY] = 'BRL'
+        with patch.object(sys, 'argv', 'program --get-default-currency'.split()):
+            rates.main(self.wf)
+
+        self.assertEqual(len(self.wf._items), 1)
+        self.assertEqual(self.wf._items[0].title, 'Your default currency is: BRL')
+
 
 if __name__ == '__main__':
     unittest.main()
