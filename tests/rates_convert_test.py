@@ -17,7 +17,6 @@ class TestRatesConvert(unittest.TestCase):
         self.wf.clear_data()
         self.wf.clear_cache()
         self.wf.settings[rates.SETTINGS_DEFAULT_CURRENCY] = 'BRL'
-        rates.currencies_csv = '../currencies.csv'
 
     def tearDown(self):
         pass

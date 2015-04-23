@@ -1,7 +1,6 @@
 import rates
 
 __author__ = 'Kennedy'
-__test__ = True
 
 import unittest
 import os
@@ -20,7 +19,6 @@ class RatesCurrencyTest(unittest.TestCase):
         pass
 
     def testLoadCurrencyInfo(self):
-        rates.currencies_csv = '../currencies.csv'
         currency_info = rates.get_currencies()
         self.assertEquals(len(currency_info), 3)
 
