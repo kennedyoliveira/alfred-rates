@@ -15,7 +15,8 @@ import csv
 from workflow import Workflow, web, ICON_ERROR, ICON_WARNING, ICON_INFO
 
 # Locale settings for OS X
-locale.setlocale(locale.LC_ALL, 'en_US')
+if sys.platform == 'darwin':
+    locale.setlocale(locale.LC_ALL, 'en_US')
 
 # Settings info
 SETTINGS_DEFAULT_CURRENCY = 'default_currency'
@@ -192,9 +193,9 @@ def process_conversion(src, dst, val, currencies, wf):
         return 0
     else:
         # Just show the ratio
-        sub_title = 'FROM ({}) TO {} ({}): {}'.format(cur_src_name, dst, cur_dst_name, rate)
+        title = 'FROM ({}) TO {} ({}): {}'.format(cur_src_name, dst, cur_dst_name, rate)
 
-        wf.add_item(sub_title, 'Converted the from the default currency', valid=True, arg='{}'.format(rate))
+        wf.add_item(title, 'Converted the from the default currency', valid=True, arg='{}'.format(rate))
         wf.send_feedback()
         return 0
 
