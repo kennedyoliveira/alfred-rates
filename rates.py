@@ -149,6 +149,14 @@ def process_conversion(src, dst, val, currencies, wf):
     :param src: Source currency CODE, like BRL or CLP
     """
     ####################################################################################################
+    # Make the currency case insensitive
+    ####################################################################################################
+    if src:
+        src = src.upper()
+    if dst:
+        dst = dst.upper()
+
+    ####################################################################################################
     # Validate the currencies to check if its a currency or not
     ####################################################################################################
     if not validate_currencies(dst, src, currencies, wf):
@@ -215,12 +223,15 @@ def main(wf):
     # Update the default currency
     ############################################################################################
     if args.default_currency:
-        if args.default_currency.upper() not in currencies:
+        currency = args.default_currency.upper()
+
+        if currency not in currencies:
             wf.add_item('You entered a invalid currency...', icon=ICON_ERROR)
             wf.send_feedback()
             return 1
 
-        wf.settings[SETTINGS_DEFAULT_CURRENCY] = args.default_currency.upper()
+        wf.settings[SETTINGS_DEFAULT_CURRENCY] = currency
+        print currency
         return 0
 
     ############################################################################################
@@ -240,8 +251,7 @@ def main(wf):
     # Clean the caches
     ############################################################################################
     if args.clear:
-        wf.clear_cache()
-        wf.clear_data()
+        wf.reset()
         wf.add_item('Caches cleared!', icon=ICON_INFO)
         wf.send_feedback()
         return 0
@@ -250,11 +260,11 @@ def main(wf):
     ############################################################################################
     query = args.query
 
-    if query and len(query) == 1 and query[0] in currencies:
+    if query and len(query) == 1 and query[0].upper() in currencies:
         ############################################################################################
         # Show the currency against the default currency or USD if none specified
         ############################################################################################
-        currency = query[0].upper()
+        currency = query[0]
 
         default_currency = 'USD'
 
@@ -273,8 +283,8 @@ def main(wf):
             return 1
 
         val = float(query[0])
-        src = query[1].upper()
-        dst = query[2].upper()
+        src = query[1]
+        dst = query[2]
 
         return process_conversion(src, dst, val, currencies, wf)
     elif args.query and len(args.query) == 2:

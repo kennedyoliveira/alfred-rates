@@ -71,5 +71,11 @@ class TestRatesConvert(unittest.TestCase):
         self.assertTrue(len(self.wf._items), 1)
         self.assertEqual(self.wf._items[0].subtitle, "Type in the following format VAL FROM-CURRENCY TO-CURRENCY")
 
+    def test_convert_case_insensitive(self):
+        with patch.object(sys, 'argv', 'program 1 brl clp'.split()):
+            rates.main(self.wf)
+        self.assertEqual(len(self.wf._items), 1)
+        self.assertNotEqual(self.wf._items[0].subtitle.find('BRL (Brazilian real) -> CLP (Chilean peso) with rate'), -1)
+
 if __name__ == '__main__':
     unittest.main()
