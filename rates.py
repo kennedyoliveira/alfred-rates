@@ -17,6 +17,8 @@ from workflow import Workflow, web, ICON_ERROR, ICON_WARNING, ICON_INFO
 # Locale settings for OS X
 if sys.platform == 'darwin':
     locale.setlocale(locale.LC_ALL, 'en_US')
+else:
+    locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
 # Settings info
 SETTINGS_DEFAULT_CURRENCY = 'default_currency'
@@ -182,22 +184,17 @@ def process_conversion(src, dst, val, currencies, wf):
     cur_dst_symbol = str.decode(currencies[dst]['Simbol'], encoding='utf-8')
     flag_file_icon = wf.workflowfile('flags/{}'.format(currencies[dst]['Flag']))
 
-    if val:
-        converted_rate = locale.currency(val * rate, grouping=True, symbol=False)
+    if not val:
+        val = 1
 
-        title = cur_dst_symbol + ' ' + converted_rate
-        sub_title = u'{} ({}) -> {} ({}) with rate {}'.format(src, cur_src_name, dst, cur_dst_name, rate)
+    converted_rate = locale.currency(val * rate, grouping=True, symbol=False)
 
-        wf.add_item(title, sub_title, valid=True, arg=converted_rate, icon=flag_file_icon)
-        wf.send_feedback()
-        return 0
-    else:
-        # Just show the ratio
-        title = 'FROM ({}) TO {} ({}): {}'.format(cur_src_name, dst, cur_dst_name, rate)
+    title = cur_dst_symbol + ' ' + converted_rate
+    sub_title = u'{} ({}) -> {} ({}) with rate {}'.format(src, cur_src_name, dst, cur_dst_name, rate)
 
-        wf.add_item(title, 'Converted the from the default currency', valid=True, arg='{}'.format(rate))
-        wf.send_feedback()
-        return 0
+    wf.add_item(title, sub_title, valid=True, arg=converted_rate, icon=flag_file_icon)
+    wf.send_feedback()
+    return 0
 
 
 def main(wf):
