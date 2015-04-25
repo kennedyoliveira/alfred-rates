@@ -77,5 +77,13 @@ class TestRatesConvert(unittest.TestCase):
         self.assertEqual(len(self.wf._items), 1)
         self.assertNotEqual(self.wf._items[0].subtitle.find('BRL (Brazilian real) -> CLP (Chilean peso) with rate'), -1)
 
+    def test_convert_eur(self):
+        # This test is because of a bug with displaying EUR symbol
+        with patch.object(sys, 'argv', 'program 1 USD EUR'.split()):
+            rates.main(self.wf)
+        self.assertEqual(len(self.wf._items), 1)
+        self.assertNotEqual(self.wf._items[0].subtitle.find('USD (United States dollar) -> EUR (Euro) with rate'), -1)
+
+
 if __name__ == '__main__':
     unittest.main()

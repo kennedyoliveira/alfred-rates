@@ -1,6 +1,7 @@
 # !/usr/bin/python
 # encoding: iso-8859-1
 import argparse
+import locale
 
 __author__ = 'Kennedy'
 __doc__ = """
@@ -12,6 +13,9 @@ import urllib
 import csv
 
 from workflow import Workflow, web, ICON_ERROR, ICON_WARNING, ICON_INFO
+
+# Locale settings for OS X
+locale.setlocale(locale.LC_ALL, 'en_US')
 
 # Settings info
 SETTINGS_DEFAULT_CURRENCY = 'default_currency'
@@ -169,24 +173,21 @@ def process_conversion(src, dst, val, currencies, wf):
         wf.send_feedback()
         return 1
 
-    #
+    ####################################################################################################
     # Gets the currency info
-    #
+    ####################################################################################################
     cur_src_name = currencies[src]['Name']
     cur_dst_name = currencies[dst]['Name']
+    cur_dst_symbol = str.decode(currencies[dst]['Simbol'], encoding='utf-8')
     flag_file_icon = wf.workflowfile('flags/{}'.format(currencies[dst]['Flag']))
 
     if val:
-        converted_rate = val * rate
+        converted_rate = locale.currency(val * rate, grouping=True, symbol=False)
 
-        if converted_rate < 0.01:
-            converted_rate_formated = "{}".format(converted_rate)
-        else:
-            converted_rate_formated = "{:.5f}".format(converted_rate)
+        title = cur_dst_symbol + ' ' + converted_rate
+        sub_title = u'{} ({}) -> {} ({}) with rate {}'.format(src, cur_src_name, dst, cur_dst_name, rate)
 
-        sub_title = '{} ({}) -> {} ({}) with rate {}'.format(src, cur_src_name, dst, cur_dst_name, rate)
-
-        wf.add_item(converted_rate_formated, sub_title, valid=True, arg=converted_rate_formated, icon=flag_file_icon)
+        wf.add_item(title, sub_title, valid=True, arg=converted_rate, icon=flag_file_icon)
         wf.send_feedback()
         return 0
     else:
