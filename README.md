@@ -7,6 +7,16 @@
 
 Convert between many currencies using the YQL (Yahoo! Query Language) to get the exchange rates in realtime for free.
 
+### Screenshots ###
+
+Convert from USD to EUR
+
+![Alt text](https://dl.dropboxusercontent.com/u/17155314/alfred-rates/1.png)
+
+Convert from default configured currency (BRL in my case) to USD
+
+![Alt text](https://dl.dropboxusercontent.com/u/17155314/alfred-rates/2.png)
+
 ### Usage: ###
 
 `rate <VAL> <CUR SRC> <CUR DST>` -> Convert the value <VAL> from the currency <CUR SRC> to the currency <CUR DST>. Example: `rate 100 BRL USD`
