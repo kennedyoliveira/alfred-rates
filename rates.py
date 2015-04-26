@@ -376,11 +376,10 @@ def main(wf):
             wf.send_feedback()
             return 1
 
-        return process_conversion(currency_src, currency_dst, val, currencies, wf)
+        return process_conversion(query, currency_src, currency_dst, val, currencies, wf)
     else:
-        wf.add_item('Wrong input', 'Type in the following format VAL FROM-CURRENCY TO-CURRENCY', icon=ICON_WARNING)
-        wf.send_feedback()
-        return -1
+        show_autocomplete(query, currencies, wf)
+        return 100
 
 
 if __name__ == '__main__':
