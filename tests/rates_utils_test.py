@@ -1,4 +1,3 @@
-import os
 import sys
 
 import rates
@@ -39,8 +38,6 @@ class RatesCurrencyTest(unittest.TestCase):
             self.assertIn('Country', info, 'No Country for currency {}'.format(info))
             self.assertTrue(info['Country'], 'No Country for currency {}'.format(info))
             self.assertIn('Flag', info, 'No Flag for currency {}'.format(info))
-            self.assertTrue(os.path.exists(self.wf.workflowfile('Flags/{}'.format(info['Flag']))),
-                            "Flag doens't exists for {}".format(info))
 
     def test_is_float(self):
         tests = [(1, True),

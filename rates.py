@@ -281,6 +281,7 @@ def main(wf):
     parser.add_argument('--set-default-currency', dest='default_currency', default=None)
     parser.add_argument('--get-default-currency', dest='get_default_currency', default=None, action='store_true')
     parser.add_argument('--clear', default=None, action='store_true')
+    parser.add_argument('--update', default=None, action='store_true')
     parser.add_argument('query', nargs='*')
 
     args = parser.parse_args(wf.args)
@@ -321,6 +322,38 @@ def main(wf):
         wf.add_item('Caches cleared!', icon=ICON_INFO)
         wf.send_feedback()
         return 0
+
+    ############################################################################################
+    # Update the workflow
+    ############################################################################################
+    if args.update:
+        if wf.start_update():
+            msg = 'Downloading and installing update ...'
+        else:
+            msg = 'No update available'
+
+        wf.add_item(msg, icon=ICON_INFO)
+        wf.send_feedback()
+        return 20   
+
+    ############################################################################################
+    # Checks if an update is available
+    ############################################################################################
+    if wf.update_available:
+        log.debug('There is a new update available...')
+
+        update_info = wf.cached_data('__workflow_update_status', None)
+
+        update_version = ''
+
+        if update_info and 'version' in update_info:
+            update_version = update_info['version']
+
+        wf.add_item('There is a new update available! {} {}'.format('Version: ', update_version),
+                    'We recommend updating the workflow by running rateupdate!')
+        wf.send_feedback()
+        sys.exit(10)
+
     ############################################################################################
     # Chech for convert actions
     ############################################################################################
@@ -383,6 +416,8 @@ def main(wf):
 
 
 if __name__ == '__main__':
-    wf = Workflow()
+    update_settings = {'github_slug': 'kennedyoliveira/alfred-rates', 'frequency': 1}
+
+    wf = Workflow(update_settings=update_settings)
     log = wf.logger
     sys.exit(wf.run(main))
