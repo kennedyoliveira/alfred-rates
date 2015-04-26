@@ -2,6 +2,8 @@
 # encoding: iso-8859-1
 import argparse
 import locale
+import os
+import re
 
 __author__ = 'Kennedy'
 __doc__ = """
@@ -105,27 +107,18 @@ def is_float(val):
         return False
 
 
-def validate_currencies(dst, src, currencies, wf):
+def validate_currencies(query, src, dst, currencies, wf):
     """
     Utility method to check if the currencies are valid.
     """
-    if src not in currencies:
-        err_msg = '{} not found'.format(src)
-        log.error(err_msg)
-        wf.add_item(err_msg)
-        wf.send_feedback()
-        return False
-    elif dst not in currencies:
-        err_msg = '{} not found'.format(dst)
-        log.error(err_msg)
-        wf.add_item(err_msg)
-        wf.send_feedback()
+    if src not in currencies or dst not in currencies:
+        show_autocomplete(query, currencies, wf)
         return False
     else:
         return True
 
 
-def search_rate(dst, src, wf):
+def search_rate(src, dst, wf):
     """
     Search the rates from YQL rest service
     """
@@ -139,7 +132,7 @@ def search_rate(dst, src, wf):
     return rate
 
 
-def process_conversion(src, dst, val, currencies, wf):
+def process_conversion(query, src, dst, val, currencies, wf):
     """
     Process the conversion from src to dst using the info withing currencies and return 0 with sucess and
     != 0 otherwise.
@@ -166,10 +159,10 @@ def process_conversion(src, dst, val, currencies, wf):
     ####################################################################################################
     # Validate the currencies to check if its a currency or not
     ####################################################################################################
-    if not validate_currencies(dst, src, currencies, wf):
-        return 1
+    if not validate_currencies(query, src, dst, currencies, wf):
+        return 100
 
-    rate = search_rate(dst, src, wf)
+    rate = search_rate(src, dst, wf)
 
     if rate == -1:
         wf.add_item('No rating found for the especified currencies...', icon=ICON_ERROR)
@@ -195,6 +188,80 @@ def process_conversion(src, dst, val, currencies, wf):
     wf.add_item(title, sub_title, valid=True, arg=converted_rate, icon=flag_file_icon)
     wf.send_feedback()
     return 0
+
+
+def extract_filter_params(query, currencies):
+    """
+    Extracts the params from query to use to filter for currencies
+
+    :param currencies: Dict with currencies
+    :param query: A list with parameters from query
+    :return: A lista with the words for use in the filter
+    """
+    query_parsed = []
+
+    if not query:
+        query_parsed
+
+    matcher = re.compile(r'[^0-9]+')
+
+    for word in query:
+        # Probably the value
+        if not matcher.match(word):
+            continue
+        # Probably a word
+        else:
+            # If its not a currency simbol, append to the query
+            if word.upper() not in currencies:
+                query_parsed.append(word)
+
+    return query_parsed
+
+
+def show_autocomplete(query, currencies, wf):
+    """
+    This fuction return a list of possible currencies
+    based on the query
+
+    :param query:
+    :param currencies: Dict with all the
+    :param wf:
+    :return:
+    """
+    currencies_list = currencies.values()
+
+    if query:
+        query_parsed = extract_filter_params(query, currencies)
+
+        if query_parsed:
+            def key_for_currency(cur):
+                return cur['Name'].decode('utf-8') + ' ' + cur['Code']
+
+            currencies_list = wf.filter(' '.join(query_parsed), currencies_list, key=key_for_currency, min_score=20)
+
+            # Removes all the query parsed strings used to filter
+            for word in query_parsed:
+                query.remove(word)
+
+    if not currencies_list:
+        wf.add_item('No currency found.')
+    else:
+        for currency in currencies_list:
+            try:
+                flag_file_icon = wf.workflowfile('flags/{}'.format(currency['Flag']))
+            except UnicodeDecodeError:
+                pass
+
+            if not os.path.exists(flag_file_icon):
+                flag_file_icon = wf.workflowfile('flags/_no_flag.png')
+
+            autocomplete = ' '.join(query + [currency['Code'].decode('utf-8')])
+
+            wf.add_item(title=currency['Name'].decode('utf-8'),
+                        subtitle='{}'.format(currency['Code'].decode('utf-8')),
+                        autocomplete=autocomplete,
+                        icon=flag_file_icon)
+    wf.send_feedback()
 
 
 def main(wf):
@@ -271,29 +338,27 @@ def main(wf):
         if SETTINGS_DEFAULT_CURRENCY in wf.settings:
             default_currency = wf.settings[SETTINGS_DEFAULT_CURRENCY]
 
-        return process_conversion(default_currency, currency, None, currencies, wf)
+        return process_conversion(query, default_currency, currency, None, currencies, wf)
     elif args.query and len(args.query) == 3:
         ####################################################################################################
         # Convert the currencies
         ####################################################################################################
         if not is_float(query[0]):
-            wf.add_item("The value typed isn't a valid currency value: {}".format(query[0]), icon=ICON_ERROR)
-            wf.send_feedback()
-            return 1
+            show_autocomplete(query, currencies, wf)
+            return 100
 
         val = float(query[0])
         src = query[1]
         dst = query[2]
 
-        return process_conversion(src, dst, val, currencies, wf)
+        return process_conversion(query, src, dst, val, currencies, wf)
     elif args.query and len(args.query) == 2:
         ####################################################################################################
         # Convert a value to the default currency or from the default currency to the other especified
         ####################################################################################################
         if not (is_float(query[0]) or is_float(query[1])):
-            wf.add_item("The value typed ins't a valid currency value", icon=ICON_ERROR)
-            wf.send_feedback()
-            return 1
+            show_autocomplete(query, currencies, wf)
+            return 100
 
         currency_dst = wf.settings.get(SETTINGS_DEFAULT_CURRENCY, 'USD')
 

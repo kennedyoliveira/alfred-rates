@@ -1,3 +1,4 @@
+import os
 import sys
 
 import rates
@@ -38,6 +39,8 @@ class RatesCurrencyTest(unittest.TestCase):
             self.assertIn('Country', info, 'No Country for currency {}'.format(info))
             self.assertTrue(info['Country'], 'No Country for currency {}'.format(info))
             self.assertIn('Flag', info, 'No Flag for currency {}'.format(info))
+            self.assertTrue(os.path.exists(self.wf.workflowfile('Flags/{}'.format(info['Flag']))),
+                            "Flag doens't exists for {}".format(info))
 
     def test_is_float(self):
         tests = [(1, True),
@@ -51,11 +54,9 @@ class RatesCurrencyTest(unittest.TestCase):
 
     def test_validate_currencies(self):
         currencies = rates.get_currencies()
-        self.assertTrue(rates.validate_currencies('BRL', 'USD', currencies, self.wf))
-        self.assertFalse(rates.validate_currencies('BRL', 'USDD', currencies, self.wf))
-        self.assertEqual(len(self.wf._items), 1)
-        self.assertEqual(self.wf._items[0].title, 'USDD not found')
-        self.assertFalse(rates.validate_currencies('BRLL', 'USD', currencies, self.wf))
+        self.assertTrue(rates.validate_currencies([], 'BRL', 'USD', currencies, self.wf))
+        self.assertFalse(rates.validate_currencies([], 'BRL', 'USDD', currencies, self.wf))
+        self.assertFalse(rates.validate_currencies([], 'BRLL', 'USD', currencies, self.wf))
 
     def test_clear_caches(self):
         self.wf.cache_data('test_cache', 'testing cache')

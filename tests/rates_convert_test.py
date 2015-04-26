@@ -57,21 +57,19 @@ class TestRatesConvert(unittest.TestCase):
 
     def test_invalid_currency_number_to_convert(self):
         with patch.object(sys, 'argv', 'program zupa BRL USD'.split()):
-            rates.main(self.wf)
-        self.assertTrue(len(self.wf._items), 1)
-        self.assertEqual(self.wf._items[0].title, "The value typed isn't a valid currency value: zupa")
+            ret = rates.main(self.wf)
+        self.assertTrue(ret, 100)
 
     def test_invalid_currency_number_to_convert_using_default(self):
         with patch.object(sys, 'argv', 'program zupa BRL'.split()):
-            rates.main(self.wf)
-        self.assertTrue(len(self.wf._items), 1)
-        self.assertEqual(self.wf._items[0].title, "The value typed ins't a valid currency value")
+            ret = rates.main(self.wf)
+        self.assertTrue(ret, 100)
 
     def test_invalid_argument(self):
         with patch.object(sys, 'argv', 'program zupa'.split()):
-            rates.main(self.wf)
-        self.assertTrue(len(self.wf._items), 1)
-        self.assertEqual(self.wf._items[0].subtitle, "Type in the following format VAL FROM-CURRENCY TO-CURRENCY")
+            ret = rates.main(self.wf)
+        # 100 means auto complete
+        self.assertEqual(ret, 100)
 
     def test_convert_case_insensitive(self):
         with patch.object(sys, 'argv', 'program 1 brl clp'.split()):
@@ -85,6 +83,21 @@ class TestRatesConvert(unittest.TestCase):
             rates.main(self.wf)
         self.assertEqual(len(self.wf._items), 1)
         self.assertNotEqual(self.wf._items[0].subtitle.find('USD (United States dollar) -> EUR (Euro) with rate'), -1)
+
+    def test_extract_filter_params(self):
+        currencies = rates.get_currencies()
+
+        # List of tuple (Params, Expected Result)
+
+        test_itens = [('100 Braz'.split(), ['Braz']),
+                      (['Braz'], ['Braz']),
+                      ('100 CLP United States'.split(), ['United', 'States']),
+                      ([''], []),
+                      ([], [])]
+
+        for test in test_itens:
+            resp = rates.extract_filter_params(test[0], currencies)
+            self.assertEqual(resp, test[1])
 
 
 if __name__ == '__main__':
