@@ -11,11 +11,16 @@ Convert between many currencies using the YQL (Yahoo! Query Language) to get the
 
 Convert from USD to EUR
 
-![Alt text](https://dl.dropboxusercontent.com/u/17155314/alfred-rates/1.png)
+![Alt text](screenshots/1.png?raw=true)
 
 Convert from default configured currency (BRL in my case) to USD
 
-![Alt text](https://dl.dropboxusercontent.com/u/17155314/alfred-rates/2.png)
+![Alt text](screenshots/2.png?raw=true)
+
+Autocomplete example
+
+![Alt text](screenshots/3.png?raw=true)
+
 
 ### Usage: ###
 
@@ -34,4 +39,5 @@ Convert from default configured currency (BRL in my case) to USD
 ##### TODO List #####
  - [X] Add more currencies info (The script will work, just need some info to validate).
  - [X] Refactor the script (I'm not a pro python coder, just started to learn and did this as first project).
- - [ ] Show currencies while user is typing, to help when you don't remember the currency code.
+ - [X] Show currencies while user is typing, to help when you don't remember the currency code.
+ - [X] Add auto update
