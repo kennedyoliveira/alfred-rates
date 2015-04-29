@@ -5,7 +5,7 @@ import locale
 import os
 import re
 
-__author__ = 'Kennedy'
+__author__ = 'Kennedy Oliveira'
 __doc__ = """
 A simple tool to convert between rates in many currencies.
 """
@@ -89,6 +89,7 @@ def load_currency_info(wf):
     """
     moedas = wf.stored_data(STORED_DATA_CURRENCY_INFO)
     if not moedas:
+        log.debug('Loading currency data...')
         moedas = get_currencies()
         wf.store_data(STORED_DATA_CURRENCY_INFO, moedas)
     return moedas
@@ -165,7 +166,7 @@ def process_conversion(query, src, dst, val, currencies, wf):
     rate = search_rate(src, dst, wf)
 
     if rate == -1:
-        wf.add_item('No rating found for the especified currencies...', icon=ICON_ERROR)
+        wf.add_item('No exchange rate found for the especified currencies...', icon=ICON_ERROR)
         wf.send_feedback()
         return 1
 
@@ -180,7 +181,7 @@ def process_conversion(query, src, dst, val, currencies, wf):
     if not val:
         val = 1
 
-    converted_rate = locale.currency(val * rate, grouping=True, symbol=False)
+    converted_rate = locale.format('%%.%if' % 4, val * rate, True, True)
 
     title = cur_dst_symbol + ' ' + converted_rate
     sub_title = u'{} ({}) -> {} ({}) with rate {}'.format(src, cur_src_name, dst, cur_dst_name, rate)
@@ -201,7 +202,7 @@ def extract_filter_params(query, currencies):
     query_parsed = []
 
     if not query:
-        query_parsed
+        return query_parsed
 
     matcher = re.compile(r'[^0-9]+')
 
@@ -264,6 +265,58 @@ def show_autocomplete(query, currencies, wf):
     wf.send_feedback()
 
 
+def handle_set_default_currency(args, currencies, wf):
+    currency = args.default_currency.upper()
+    if currency not in currencies:
+        wf.add_item('You entered a invalid currency...', icon=ICON_ERROR)
+        wf.send_feedback()
+        return 1
+    wf.settings[SETTINGS_DEFAULT_CURRENCY] = currency
+    print currency
+    return 0
+
+
+def handle_get_default_currency(wf):
+    if SETTINGS_DEFAULT_CURRENCY in wf.settings:
+        wf.add_item('Your default currency is: {}'.format(wf.settings[SETTINGS_DEFAULT_CURRENCY]), icon=ICON_INFO)
+        wf.send_feedback()
+    else:
+        wf.add_item('No default currency.', 'Please, use the ratesetcurrency to set the default currency first',
+                    icon=ICON_WARNING, valid=True)
+        wf.send_feedback()
+    return 0
+
+
+def handle_clear(wf):
+    wf.reset()
+    wf.add_item('Caches cleared!', icon=ICON_INFO)
+    wf.send_feedback()
+    return 0
+
+
+def handle_update(wf):
+    if wf.start_update():
+        msg = 'Downloading and installing update ...'
+    else:
+        msg = 'No update available'
+    wf.add_item(msg, icon=ICON_INFO)
+    wf.send_feedback()
+    return 20
+
+
+def handle_check_update(wf):
+    log.debug('There is a new update available...')
+    wf.check_update(True)
+    update_info = wf.cached_data('__workflow_update_status', None)
+    update_version = ''
+    if update_info and 'version' in update_info:
+        update_version = update_info['version']
+    wf.add_item('There is a new update available! {} {}'.format('Version: ', update_version),
+                'We recommend updating the workflow by running rateupdate!')
+    wf.send_feedback()
+    return 10
+
+
 def main(wf):
     """
     Execute the script
@@ -290,80 +343,43 @@ def main(wf):
     # Update the default currency
     ############################################################################################
     if args.default_currency:
-        currency = args.default_currency.upper()
-
-        if currency not in currencies:
-            wf.add_item('You entered a invalid currency...', icon=ICON_ERROR)
-            wf.send_feedback()
-            return 1
-
-        wf.settings[SETTINGS_DEFAULT_CURRENCY] = currency
-        print currency
-        return 0
+        return handle_set_default_currency(args, currencies, wf)
 
     ############################################################################################
     # Get the default currency
     ############################################################################################
     if args.get_default_currency:
-        if SETTINGS_DEFAULT_CURRENCY in wf.settings:
-            wf.add_item('Your default currency is: {}'.format(wf.settings[SETTINGS_DEFAULT_CURRENCY]), icon=ICON_INFO)
-            wf.send_feedback()
-        else:
-            wf.add_item('No default currency.', 'Please, use the ratesetcurrency to set the default currency first',
-                        icon=ICON_WARNING, valid=True)
-            wf.send_feedback()
-        return 0
+        return handle_get_default_currency(wf)
 
     ############################################################################################
     # Clean the caches
     ############################################################################################
     if args.clear:
-        wf.reset()
-        wf.add_item('Caches cleared!', icon=ICON_INFO)
-        wf.send_feedback()
-        return 0
+        return handle_clear(wf)
 
     ############################################################################################
     # Update the workflow
     ############################################################################################
     if args.update:
-        if wf.start_update():
-            msg = 'Downloading and installing update ...'
-        else:
-            msg = 'No update available'
+        return handle_update(wf)
 
-        wf.add_item(msg, icon=ICON_INFO)
-        wf.send_feedback()
-        return 20
-
-        ############################################################################################
+    ############################################################################################
     # Checks if an update is available
     ############################################################################################
     if wf.update_available:
-        log.debug('There is a new update available...')
-
-        update_info = wf.cached_data('__workflow_update_status', None)
-
-        update_version = ''
-
-        if update_info and 'version' in update_info:
-            update_version = update_info['version']
-
-        wf.add_item('There is a new update available! {} {}'.format('Version: ', update_version),
-                    'We recommend updating the workflow by running rateupdate!')
-        wf.send_feedback()
-        sys.exit(10)
+        return handle_check_update(wf)
 
     ############################################################################################
     # Chech for convert actions
     ############################################################################################
     query = args.query
+    if query and len(query) == 1:
+        inverted_currency = query[0].startswith('!') or query[0].endswith('!')
 
-    if query and len(query) == 1 and query[0].upper() in currencies:
         ############################################################################################
         # Show the currency against the default currency or USD if none specified
         ############################################################################################
-        currency = query[0]
+        currency = query[0] if not inverted_currency else query[0].replace('!', '')
 
         default_currency = 'USD'
 
@@ -371,7 +387,14 @@ def main(wf):
         if SETTINGS_DEFAULT_CURRENCY in wf.settings:
             default_currency = wf.settings[SETTINGS_DEFAULT_CURRENCY]
 
-        return process_conversion(query, default_currency, currency, None, currencies, wf)
+        if inverted_currency:
+            currency_src = currency
+            currency_dst = default_currency
+        else:
+            currency_src = default_currency
+            currency_dst = currency
+
+        return process_conversion(query, currency_src, currency_dst, None, currencies, wf)
     elif args.query and len(args.query) == 3:
         ####################################################################################################
         # Convert the currencies
