@@ -4,6 +4,7 @@
 """
 A simple tool to convert between rates in many currencies.
 """
+from __future__ import division
 
 __author__ = 'Kennedy Oliveira'
 
@@ -11,11 +12,12 @@ import argparse
 import locale
 import os
 import re
-import sys
 import urllib
 import csv
 
+import sys
 from workflow import Workflow, web, ICON_ERROR, ICON_WARNING, ICON_INFO
+
 
 # Locale settings for OS X
 if sys.platform == 'darwin':
@@ -29,6 +31,7 @@ SETTINGS_DEFAULT_NUMBER_DIVISOR = 'default_divisor'
 STORED_DATA_CURRENCY_INFO = 'currency_info'
 
 log = None
+wf = None
 
 # Url for the YQL Rest API
 api_url = 'https://query.yahooapis.com/v1/public/yql'
@@ -101,7 +104,7 @@ def is_float(val):
     """
     Check if the given val can be converted to float
 
-    :type val: object
+    :type val: str
     """
     try:
         float(val)
@@ -212,12 +215,34 @@ def format_result(wf, converted_rate):
         # Numero de casas decimais pra pegar o divisor
         locale_divisor = fmt_val[-5]
 
-    fmt_nums = fmt_val.split(locale_divisor)
+    return fmt_number(fmt_val, divisor, locale_divisor)
+
+
+def fmt_number(fmt_val, divisor, src_divisor=None):
+    """
+    Formats the number with the divisor parameter as the division number
+    :type fmt_val: str
+    :type divisor: str
+    :type src_divisor: str
+    """
+    # If its didn't receive the source divisor number, try to figure out which one is using
+    if not src_divisor:
+        for char in fmt_val[::-1]:
+            if char == '.' or char == ',':
+                src_divisor = char
+                break
+
+    if not src_divisor:
+        log.debug("Doesn't formating value %s because no divisor was informed nor found.", fmt_val)
+        return fmt_val
+
+    fmt_nums = fmt_val.split(src_divisor)
 
     # Inverse the user divisor
     replace_user_divisor = ',' if divisor == '.' else '.'
+
     # Inverse the locale divisor
-    replace_locale_divisor = ',' if locale_divisor == '.' else '.'
+    replace_locale_divisor = ',' if src_divisor == '.' else '.'
 
     return '{}{}{}'.format(fmt_nums[0].replace(replace_locale_divisor, replace_user_divisor), divisor, fmt_nums[1])
 
@@ -371,6 +396,26 @@ def handle_get_default_divisor(wf):
     return 0
 
 
+def evaluate_math(query):
+    """
+    Evaluate maths expressions if there are any in the query
+
+    :type query: list[str]
+    """
+    # Final result
+    evaluated_query = []
+
+    math_expr = re.compile(r'(\d+([.]\d+)*|[+\-/*])+\d([.]\d+)*$')
+
+    for q in query:
+        if math_expr.match(q):
+            evaluated_query += [str(eval(q))]
+        else:
+            evaluated_query += [q]
+
+    return evaluated_query
+
+
 def main(wf):
     """
     Execute the script
@@ -394,6 +439,9 @@ def main(wf):
     parser.add_argument('query', nargs='*')
 
     args = parser.parse_args(wf.args)
+
+    log.debug('Args parsed: %s', args)
+    log.debug('Args received: %s', wf.args)
 
     ############################################################################################
     # Update the default currency
@@ -419,7 +467,6 @@ def main(wf):
     if args.get_default_divisor:
         return handle_get_default_divisor(wf)
 
-
     ############################################################################################
     # Clean the caches
     ############################################################################################
@@ -441,7 +488,8 @@ def main(wf):
     ############################################################################################
     # Check for convert actions
     ############################################################################################
-    query = args.query
+    query = evaluate_math(args.query)
+
     if query and len(query) == 1:
         inverted_currency = query[0].startswith('!') or query[0].endswith('!')
 
@@ -464,7 +512,7 @@ def main(wf):
             currency_dst = currency
 
         return process_conversion(query, currency_src, currency_dst, None, currencies, wf)
-    elif args.query and len(args.query) == 3:
+    elif query and len(query) == 3:
         ####################################################################################################
         # Convert the currencies
         ####################################################################################################
@@ -477,7 +525,7 @@ def main(wf):
         dst = query[2]
 
         return process_conversion(query, src, dst, val, currencies, wf)
-    elif args.query and len(args.query) == 2:
+    elif query and len(query) == 2:
         ####################################################################################################
         # Convert a value to the default currency or from the default currency to the other especified
         ####################################################################################################
@@ -493,13 +541,9 @@ def main(wf):
             currency_dst = query[1]
             val = float(query[0])
         # Second parameter is the value, means should convert from the query currency to the default one
-        elif not is_float(query[0]) and is_float(query[1]):
+        else:
             currency_src = query[0]
             val = float(query[1])
-        else:
-            wf.add_item('Wrong arguments ...', icon=ICON_ERROR)
-            wf.send_feedback()
-            return 1
 
         return process_conversion(query, currency_src, currency_dst, val, currencies, wf)
     else:

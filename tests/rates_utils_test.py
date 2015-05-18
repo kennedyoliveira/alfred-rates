@@ -2,7 +2,6 @@ import sys
 
 import rates
 
-
 __author__ = 'Kennedy'
 
 import unittest
@@ -64,6 +63,37 @@ class RatesCurrencyTest(unittest.TestCase):
         self.assertEqual(self.wf._items[0].title, 'Caches cleared!')
         self.assertIsNone(self.wf.stored_data('test_store'))
         self.assertIsNone(self.wf.cached_data('test_cache'))
+
+    def test_evaluate_math(self):
+
+        tests = [
+            (['100*3', '100'], ['300', '100']),
+            (['135.3*2', '234.5-5'], ['270.6', '229.5']),
+            (['123/2', '61.5*50'], ['61.5', '3075.0']),
+            (['123.5*2.5'], ['308.75']),
+            # (['123', '/2', '61.5*50'], ['61.5', '3075.0']),
+            # (['123', '/', '2', '61.5*50'], ['61.5', '3075.0']),
+            # (['123', '/2', '/', '2', '61.5*50'], ['30.75', '3075.0']),
+            # (['123', '/2', '/', '2', '61.5*50', '/3', '*2'], ['30.75', '2050.0'])
+            # (['123*', '2'], ['246'])
+            # (['100*2', 'usd', 'brl'], ['200', 'usd', 'brl'])
+        ]
+
+        for t in tests:
+            result = rates.evaluate_math(t[0])
+            self.assertEqual(result, t[1])
+
+    def test_fmt_number(self):
+        tests = [
+            ('100.00', '.', '100.00'),
+            ('100.00', ',', '100,00'),
+            ('1.000,00', '.', '1,000.00'),
+            ('100', None, '100')
+        ]
+
+        for t in tests:
+            result = rates.fmt_number(t[0], t[1])
+            self.assertEqual(result, t[2])
 
 
 if __name__ == '__main__':

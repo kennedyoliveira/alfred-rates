@@ -62,6 +62,28 @@ class TestRatesSettings(unittest.TestCase):
 
         self.assertEqual(self.wf._items[0].title, "Default divisor updated to: '.'")
 
+    def test_set_wrong_default_divisor(self):
+        with patch.object(sys, 'argv', 'program --set-default-divisor ;'.split()):
+            rates.main(self.wf)
+
+        self.assertEqual(self.wf._items[0].title, "Wrong divisor, please specify '.' or ','.")
+
+    def test_get_default_divisor(self):
+        self.wf.settings.clear()
+
+        with patch.object(sys, 'argv', 'program --get-default-divisor'.split()):
+            rates.main(self.wf)
+
+        self.assertEqual(self.wf._items[0].title, "No number divisor set, using the default '.'")
+
+    def test_get_default_divisor_setted(self):
+        self.wf.settings[rates.SETTINGS_DEFAULT_NUMBER_DIVISOR] = ','
+
+        with patch.object(sys, 'argv', 'program --get-default-divisor'.split()):
+            rates.main(self.wf)
+
+        self.assertEqual(self.wf._items[0].title, "The number divisor is: ','")
+
 
 if __name__ == '__main__':
     unittest.main()
