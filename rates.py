@@ -1,15 +1,16 @@
 # !/usr/bin/python
 # encoding: iso-8859-1
+
+"""
+A simple tool to convert between rates in many currencies.
+"""
+
+__author__ = 'Kennedy Oliveira'
+
 import argparse
 import locale
 import os
 import re
-
-__author__ = 'Kennedy Oliveira'
-__doc__ = """
-A simple tool to convert between rates in many currencies.
-"""
-
 import sys
 import urllib
 import csv
@@ -24,6 +25,7 @@ else:
 
 # Settings info
 SETTINGS_DEFAULT_CURRENCY = 'default_currency'
+SETTINGS_DEFAULT_NUMBER_DIVISOR = 'default_divisor'
 STORED_DATA_CURRENCY_INFO = 'currency_info'
 
 log = None
@@ -181,14 +183,43 @@ def process_conversion(query, src, dst, val, currencies, wf):
     if not val:
         val = 1
 
-    converted_rate = locale.format('%%.%if' % 4, val * rate, True, True)
+    converted_rate = val * rate
 
-    title = cur_dst_symbol + ' ' + converted_rate
+    fmt_converted_rate = format_result(wf, converted_rate)
+
+    title = cur_dst_symbol + ' ' + fmt_converted_rate
     sub_title = u'{} ({}) -> {} ({}) with rate {}'.format(src, cur_src_name, dst, cur_dst_name, rate)
 
-    wf.add_item(title, sub_title, valid=True, arg=converted_rate, icon=flag_file_icon)
+    wf.add_item(title, sub_title, valid=True, arg=str(converted_rate), icon=flag_file_icon)
     wf.send_feedback()
     return 0
+
+
+def format_result(wf, converted_rate):
+    """
+    Format the result acording to user configuration.
+    :type wf: Workflow
+    :type converted_rate: float
+    """
+    fmt_val = locale.format('%%.%if' % 4, converted_rate, True, True)
+
+    # User divisor
+    divisor = wf.settings.get(SETTINGS_DEFAULT_NUMBER_DIVISOR, '.')
+
+    try:
+        locale_divisor = locale.localeconv().get('decimal_point')
+    except:
+        # Numero de casas decimais pra pegar o divisor
+        locale_divisor = fmt_val[-5]
+
+    fmt_nums = fmt_val.split(locale_divisor)
+
+    # Inverse the user divisor
+    replace_user_divisor = ',' if divisor == '.' else '.'
+    # Inverse the locale divisor
+    replace_locale_divisor = ',' if locale_divisor == '.' else '.'
+
+    return '{}{}{}'.format(fmt_nums[0].replace(replace_locale_divisor, replace_user_divisor), divisor, fmt_nums[1])
 
 
 def extract_filter_params(query, currencies):
@@ -317,6 +348,29 @@ def handle_check_update(wf):
     return 10
 
 
+def handle_set_default_divisor(args, wf):
+    if args.default_divisor == '.' or args.default_divisor == ',':
+        wf.settings[SETTINGS_DEFAULT_NUMBER_DIVISOR] = args.default_divisor
+        wf.add_item("Default divisor updated to: '{}'".format(args.default_divisor))
+        wf.send_feedback()
+    else:
+        wf.add_item("Wrong divisor, please specify '.' or ','.", icon=ICON_ERROR)
+        wf.send_feedback()
+    return 0
+
+
+def handle_get_default_divisor(wf):
+    if SETTINGS_DEFAULT_NUMBER_DIVISOR in wf.settings:
+        wf.add_item("The number divisor is: '{}'".format(wf.settings[SETTINGS_DEFAULT_NUMBER_DIVISOR]), icon=ICON_INFO)
+        wf.send_feedback()
+    else:
+        wf.add_item("No number divisor set, using the default '.'",
+                    'Please, use the ratesetdivisor to set the default number divisor',
+                    icon=ICON_WARNING, valid=True)
+        wf.send_feedback()
+    return 0
+
+
 def main(wf):
     """
     Execute the script
@@ -333,6 +387,8 @@ def main(wf):
 
     parser.add_argument('--set-default-currency', dest='default_currency', default=None)
     parser.add_argument('--get-default-currency', dest='get_default_currency', default=None, action='store_true')
+    parser.add_argument('--set-default-divisor', dest='default_divisor', default=None)
+    parser.add_argument('--get-default-divisor', dest='get_default_divisor', default=None, action='store_true')
     parser.add_argument('--clear', default=None, action='store_true')
     parser.add_argument('--update', default=None, action='store_true')
     parser.add_argument('query', nargs='*')
@@ -350,6 +406,19 @@ def main(wf):
     ############################################################################################
     if args.get_default_currency:
         return handle_get_default_currency(wf)
+
+    ############################################################################################
+    # Update the default divisor
+    ############################################################################################
+    if args.default_divisor:
+        return handle_set_default_divisor(args, wf)
+
+    ############################################################################################
+    # Get the default divisor
+    ############################################################################################
+    if args.get_default_divisor:
+        return handle_get_default_divisor(wf)
+
 
     ############################################################################################
     # Clean the caches
@@ -370,7 +439,7 @@ def main(wf):
         return handle_check_update(wf)
 
     ############################################################################################
-    # Chech for convert actions
+    # Check for convert actions
     ############################################################################################
     query = args.query
     if query and len(query) == 1:

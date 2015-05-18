@@ -50,6 +50,18 @@ class TestRatesSettings(unittest.TestCase):
         self.assertEqual(len(self.wf._items), 1)
         self.assertEqual(self.wf._items[0].title, 'Your default currency is: BRL')
 
+    def test_set_default_divisor_comma(self):
+        with patch.object(sys, 'argv', 'program --set-default-divisor ,'.split()):
+            rates.main(self.wf)
+
+        self.assertEqual(self.wf._items[0].title, "Default divisor updated to: ','")
+
+    def test_set_default_divisor_dot(self):
+        with patch.object(sys, 'argv', 'program --set-default-divisor .'.split()):
+            rates.main(self.wf)
+
+        self.assertEqual(self.wf._items[0].title, "Default divisor updated to: '.'")
+
 
 if __name__ == '__main__':
     unittest.main()
