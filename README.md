@@ -21,6 +21,20 @@ Autocomplete example
 
 ![Alt text](screenshots/3.png?raw=true)
 
+## New Features
+
+You can do math with the values now!
+
+### Example:
+
+`rate 100*1.03 USD EUR` -> will do the math first and after get the rates!
+
+You can do the basic math operations:
+
+- Divide
+- Multiply
+- Sum
+- Substract
 
 ### Usage: ###
 
@@ -35,9 +49,3 @@ Autocomplete example
 `ratesetcurrency` -> Set the default currency, for use with the comands `rate <VAL> <CUR DST>` and `rate <CUR SRC> <VAL>`
 
 `rateclear` -> Clears all the cached data, used when there is a new version for removing olds caches.
-
-##### TODO List #####
- - [X] Add more currencies info (The script will work, just need some info to validate).
- - [X] Refactor the script (I'm not a pro python coder, just started to learn and did this as first project).
- - [X] Show currencies while user is typing, to help when you don't remember the currency code.
- - [X] Add auto update
