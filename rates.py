@@ -14,7 +14,7 @@ import os
 import re
 import urllib
 import csv
-
+import currencies_utilities
 import sys
 from workflow import Workflow, web, ICON_ERROR, ICON_WARNING, ICON_INFO
 
@@ -73,10 +73,12 @@ def get_rates(src, dst):
 def get_currencies():
     """
     Get the currency info from the csv withing the workflow
-    TODO Load it from rest service
+
     :rtype : dict[str,dict]
     """
     currencies = {}
+
+    currencies_utilities.fetch_currencies()
 
     with open(currencies_csv, mode='rU') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -361,7 +363,7 @@ def handle_update(wf):
 
 
 def handle_check_update(wf):
-    log.debug('There is a new update available...')
+    log.debug('Checking if there is a new update available...')
     wf.check_update(True)
     update_info = wf.cached_data('__workflow_update_status', None)
     update_version = ''
