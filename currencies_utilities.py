@@ -8,6 +8,7 @@ __author__ = 'kennedy'
 
 import hashlib
 import requests
+import os.path
 
 
 def fetch_currencies():
@@ -23,7 +24,12 @@ def fetch_currencies():
             remote_md5 = resp.content
 
             md5 = hashlib.md5()
-            md5.update(open('currencies.csv').read())
+
+            if os.path.exists('currencies.csv'):
+                md5.update(open('currencies.csv').read())
+            else:
+                md5.update('zupa!');
+
             actual_md5 = md5.hexdigest()
 
             if remote_md5 != actual_md5:
