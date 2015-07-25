@@ -17,7 +17,7 @@ import csv
 import currencies_utilities
 import sys
 from workflow import Workflow, web, ICON_ERROR, ICON_WARNING, ICON_INFO
-
+from collections import deque
 
 # Locale settings for OS X
 if sys.platform == 'darwin':
@@ -191,7 +191,8 @@ def process_conversion(queries, query, src, dst, val, currencies, wf):
     fmt_converted_rate = format_result(wf, converted_rate)
 
     title = cur_dst_symbol + ' ' + fmt_converted_rate
-    sub_title = u'({}) -> ({}) with rate {} for query: {}'.format(cur_src_name, cur_dst_name, rate, ' '.join(query).upper())
+    sub_title = u'({}) -> ({}) with rate {} for query: {}'.format(cur_src_name, cur_dst_name, rate,
+                                                                  ' '.join(query).upper())
 
     wf.add_item(title, sub_title, valid=True, arg=str(converted_rate), icon=flag_file_icon)
 
@@ -481,15 +482,39 @@ def main(wf):
     if args.update:
         return handle_update(wf)
 
+    # list of list of queries [ [query 1 parameters], [query 2 parameters] [query n parameters ...]]
     queries = []
 
     if len(args.query) > 0:
+        # Split the queries for multiqueries
         tmp_queries = args.query[0].split(';')
 
         for q in tmp_queries:
-            queries.append(evaluate_math(list(q.split())))
+            # split each of the queries into the parameters for each querie
+            query = list(q.split())
 
-    retornos = []
+            # Especial handling for queries like 1 GBP USD CAD CLP EUR, query the first
+            # currency will be check against each one of the others, so in the example will need to transform
+            # this query into 4 queries
+            # 1 -> 1 GBP USD
+            # 2 -> 1 GBP CAD
+            # 3 -> 1 GBP CLP
+            # 4 -> 1 GBP EUR
+            if len(query) > 3:
+                # The first parameter is a number, and the second are not
+                queue = deque(evaluate_math(query))
+
+                base_query = [queue.popleft(), queue.popleft()]
+
+                while len(queue) > 0:
+                    query_tmp = list(base_query)
+                    query_tmp.append(queue.popleft())
+                    queries.append(query_tmp)
+            else:
+                # just add
+                queries.append(evaluate_math(query))
+
+    returns = []
 
     for query in queries:
         if query and len(query) == 1:
@@ -514,7 +539,7 @@ def main(wf):
                 currency_dst = currency
 
             ret = process_conversion(queries, query, currency_src, currency_dst, None, currencies, wf)
-            retornos.append(ret)
+            returns.append(ret)
         elif query and len(query) == 3:
             ####################################################################################################
             # Convert the currencies
@@ -528,7 +553,7 @@ def main(wf):
             dst = query[2]
 
             ret = process_conversion(queries, query, src, dst, val, currencies, wf)
-            retornos.append(ret)
+            returns.append(ret)
         elif query and len(query) == 2:
             ####################################################################################################
             # Convert a value to the default currency or from the default currency to the other especified
@@ -550,14 +575,15 @@ def main(wf):
                 val = float(query[1])
 
             ret = process_conversion(queries, query, currency_src, currency_dst, val, currencies, wf)
-            retornos.append(ret)
+            returns.append(ret)
         else:
             show_autocomplete(queries, query, currencies, wf)
-            retornos.append(100)
+            returns.append(100)
 
-    for r in retornos:
+    for r in returns:
         if r != 0:
             return r
+
 
 if __name__ == '__main__':
     update_settings = {'github_slug': 'kennedyoliveira/alfred-rates', 'frequency': 1}
