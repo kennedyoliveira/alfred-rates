@@ -28,7 +28,7 @@ def fetch_currencies():
             if os.path.exists('currencies.csv'):
                 md5.update(open('currencies.csv').read())
             else:
-                md5.update('zupa!');
+                md5.update('zupa!')
 
             actual_md5 = md5.hexdigest()
 
