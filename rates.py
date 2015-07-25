@@ -196,6 +196,13 @@ def process_conversion(query, src, dst, val, currencies, wf):
     sub_title = u'{} ({}) -> {} ({}) with rate {}'.format(src, cur_src_name, dst, cur_dst_name, rate)
 
     wf.add_item(title, sub_title, valid=True, arg=str(converted_rate), icon=flag_file_icon)
+
+    ############################################################################################
+    # Checks if an update is available, and add it to the output
+    ############################################################################################
+    if wf.update_available:
+        handle_check_update(wf)
+
     wf.send_feedback()
     return 0
 
@@ -371,8 +378,6 @@ def handle_check_update(wf):
         update_version = update_info['version']
     wf.add_item('There is a new update available! {} {}'.format('Version: ', update_version),
                 'We recommend updating the workflow by running rateupdate!')
-    wf.send_feedback()
-    return 10
 
 
 def handle_set_default_divisor(args, wf):
@@ -480,12 +485,6 @@ def main(wf):
     ############################################################################################
     if args.update:
         return handle_update(wf)
-
-    ############################################################################################
-    # Checks if an update is available
-    ############################################################################################
-    if wf.update_available:
-        return handle_check_update(wf)
 
     ############################################################################################
     # Check for convert actions
