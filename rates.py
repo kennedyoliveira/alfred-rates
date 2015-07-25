@@ -79,7 +79,6 @@ def get_currencies():
     currencies = {}
 
     currencies_utilities.fetch_currencies()
-
     with open(currencies_csv, mode='rU') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -115,12 +114,12 @@ def is_float(val):
         return False
 
 
-def validate_currencies(query, src, dst, currencies, wf):
+def validate_currencies(queries, query, src, dst, currencies, wf):
     """
     Utility method to check if the currencies are valid.
     """
     if src not in currencies or dst not in currencies:
-        show_autocomplete(query, currencies, wf)
+        show_autocomplete(queries, query, currencies, wf)
         return False
     else:
         return True
@@ -140,7 +139,7 @@ def search_rate(src, dst, wf):
     return rate
 
 
-def process_conversion(query, src, dst, val, currencies, wf):
+def process_conversion(queries, query, src, dst, val, currencies, wf):
     """
     Process the conversion from src to dst using the info withing currencies and return 0 with sucess and
     != 0 otherwise.
@@ -167,14 +166,13 @@ def process_conversion(query, src, dst, val, currencies, wf):
     ####################################################################################################
     # Validate the currencies to check if its a currency or not
     ####################################################################################################
-    if not validate_currencies(query, src, dst, currencies, wf):
+    if not validate_currencies(queries, query, src, dst, currencies, wf):
         return 100
 
     rate = search_rate(src, dst, wf)
 
     if rate == -1:
         wf.add_item('No exchange rate found for the especified currencies...', icon=ICON_ERROR)
-        wf.send_feedback()
         return 1
 
     ####################################################################################################
@@ -193,7 +191,7 @@ def process_conversion(query, src, dst, val, currencies, wf):
     fmt_converted_rate = format_result(wf, converted_rate)
 
     title = cur_dst_symbol + ' ' + fmt_converted_rate
-    sub_title = u'{} ({}) -> {} ({}) with rate {}'.format(src, cur_src_name, dst, cur_dst_name, rate)
+    sub_title = u'({}) -> ({}) with rate {} for query: {}'.format(cur_src_name, cur_dst_name, rate, ' '.join(query).upper())
 
     wf.add_item(title, sub_title, valid=True, arg=str(converted_rate), icon=flag_file_icon)
 
@@ -203,7 +201,6 @@ def process_conversion(query, src, dst, val, currencies, wf):
     if wf.update_available:
         handle_check_update(wf)
 
-    wf.send_feedback()
     return 0
 
 
@@ -284,12 +281,13 @@ def extract_filter_params(query, currencies):
     return query_parsed
 
 
-def show_autocomplete(query, currencies, wf):
+def show_autocomplete(queries, query, currencies, wf):
     """
     This fuction return a list of possible currencies
     based on the query
 
-    :param query:
+    :param queries: list with all the queries entered even the one being processed now
+    :param query: a list with the query being processed now
     :param currencies: Dict with all the
     :param wf:
     :return:
@@ -321,20 +319,25 @@ def show_autocomplete(query, currencies, wf):
             if not os.path.exists(flag_file_icon):
                 flag_file_icon = wf.workflowfile('flags/_no_flag.png')
 
-            autocomplete = ' '.join(query + [currency['Code'].decode('utf-8')])
+            autocomplete = ''
+
+            # if there is more than 1 query, i keep all them for the autocomplete
+            if len(queries) > 1:
+                for q in queries[:-1]:
+                    autocomplete += ' '.join(q) + ';'
+
+            autocomplete += ' '.join(query + [currency['Code'].decode('utf-8')])
 
             wf.add_item(title=currency['Name'].decode('utf-8'),
                         subtitle='{}'.format(currency['Code'].decode('utf-8')),
                         autocomplete=autocomplete,
                         icon=flag_file_icon)
-    wf.send_feedback()
 
 
 def handle_set_default_currency(args, currencies, wf):
     currency = args.default_currency.upper()
     if currency not in currencies:
         wf.add_item('You entered a invalid currency...', icon=ICON_ERROR)
-        wf.send_feedback()
         return 1
     wf.settings[SETTINGS_DEFAULT_CURRENCY] = currency
     print currency
@@ -344,18 +347,15 @@ def handle_set_default_currency(args, currencies, wf):
 def handle_get_default_currency(wf):
     if SETTINGS_DEFAULT_CURRENCY in wf.settings:
         wf.add_item('Your default currency is: {}'.format(wf.settings[SETTINGS_DEFAULT_CURRENCY]), icon=ICON_INFO)
-        wf.send_feedback()
     else:
         wf.add_item('No default currency.', 'Please, use the ratesetcurrency to set the default currency first',
                     icon=ICON_WARNING, valid=True)
-        wf.send_feedback()
     return 0
 
 
 def handle_clear(wf):
     wf.reset()
     wf.add_item('Caches cleared!', icon=ICON_INFO)
-    wf.send_feedback()
     return 0
 
 
@@ -365,7 +365,6 @@ def handle_update(wf):
     else:
         msg = 'No update available'
     wf.add_item(msg, icon=ICON_INFO)
-    wf.send_feedback()
     return 20
 
 
@@ -384,22 +383,18 @@ def handle_set_default_divisor(args, wf):
     if args.default_divisor == '.' or args.default_divisor == ',':
         wf.settings[SETTINGS_DEFAULT_NUMBER_DIVISOR] = args.default_divisor
         wf.add_item("Default divisor updated to: '{}'".format(args.default_divisor))
-        wf.send_feedback()
     else:
         wf.add_item("Wrong divisor, please specify '.' or ','.", icon=ICON_ERROR)
-        wf.send_feedback()
     return 0
 
 
 def handle_get_default_divisor(wf):
     if SETTINGS_DEFAULT_NUMBER_DIVISOR in wf.settings:
         wf.add_item("The number divisor is: '{}'".format(wf.settings[SETTINGS_DEFAULT_NUMBER_DIVISOR]), icon=ICON_INFO)
-        wf.send_feedback()
     else:
         wf.add_item("No number divisor set, using the default '.'",
                     'Please, use the ratesetdivisor to set the default number divisor',
                     icon=ICON_WARNING, valid=True)
-        wf.send_feedback()
     return 0
 
 
@@ -486,75 +481,89 @@ def main(wf):
     if args.update:
         return handle_update(wf)
 
-    ############################################################################################
-    # Check for convert actions
-    ############################################################################################
-    query = evaluate_math(args.query)
+    queries = []
 
-    if query and len(query) == 1:
-        inverted_currency = query[0].startswith('!') or query[0].endswith('!')
+    if len(args.query) > 0:
+        tmp_queries = args.query[0].split(';')
 
-        ############################################################################################
-        # Show the currency against the default currency or USD if none specified
-        ############################################################################################
-        currency = query[0] if not inverted_currency else query[0].replace('!', '')
+        for q in tmp_queries:
+            queries.append(evaluate_math(list(q.split())))
 
-        default_currency = 'USD'
+    retornos = []
 
-        # If Has a default currency settings, use it, otherwise keeps the default USD
-        if SETTINGS_DEFAULT_CURRENCY in wf.settings:
-            default_currency = wf.settings[SETTINGS_DEFAULT_CURRENCY]
+    for query in queries:
+        if query and len(query) == 1:
+            inverted_currency = query[0].startswith('!') or query[0].endswith('!')
 
-        if inverted_currency:
-            currency_src = currency
-            currency_dst = default_currency
-        else:
-            currency_src = default_currency
-            currency_dst = currency
+            ############################################################################################
+            # Show the currency against the default currency or USD if none specified
+            ############################################################################################
+            currency = query[0] if not inverted_currency else query[0].replace('!', '')
 
-        return process_conversion(query, currency_src, currency_dst, None, currencies, wf)
-    elif query and len(query) == 3:
-        ####################################################################################################
-        # Convert the currencies
-        ####################################################################################################
-        if not is_float(query[0]):
-            show_autocomplete(query, currencies, wf)
-            return 100
+            default_currency = 'USD'
 
-        val = float(query[0])
-        src = query[1]
-        dst = query[2]
+            # If Has a default currency settings, use it, otherwise keeps the default USD
+            if SETTINGS_DEFAULT_CURRENCY in wf.settings:
+                default_currency = wf.settings[SETTINGS_DEFAULT_CURRENCY]
 
-        return process_conversion(query, src, dst, val, currencies, wf)
-    elif query and len(query) == 2:
-        ####################################################################################################
-        # Convert a value to the default currency or from the default currency to the other especified
-        ####################################################################################################
-        if not (is_float(query[0]) or is_float(query[1])):
-            show_autocomplete(query, currencies, wf)
-            return 100
+            if inverted_currency:
+                currency_src = currency
+                currency_dst = default_currency
+            else:
+                currency_src = default_currency
+                currency_dst = currency
 
-        currency_dst = wf.settings.get(SETTINGS_DEFAULT_CURRENCY, 'USD')
+            ret = process_conversion(queries, query, currency_src, currency_dst, None, currencies, wf)
+            retornos.append(ret)
+        elif query and len(query) == 3:
+            ####################################################################################################
+            # Convert the currencies
+            ####################################################################################################
+            if not is_float(query[0]):
+                show_autocomplete(queries, query, currencies, wf)
+                return 100
 
-        # First parameter is the value, means should convert from local default currency to the one specified in the query
-        if is_float(query[0]) and not is_float(query[1]):
-            currency_src = currency_dst
-            currency_dst = query[1]
             val = float(query[0])
-        # Second parameter is the value, means should convert from the query currency to the default one
+            src = query[1]
+            dst = query[2]
+
+            ret = process_conversion(queries, query, src, dst, val, currencies, wf)
+            retornos.append(ret)
+        elif query and len(query) == 2:
+            ####################################################################################################
+            # Convert a value to the default currency or from the default currency to the other especified
+            ####################################################################################################
+            if not (is_float(query[0]) or is_float(query[1])):
+                show_autocomplete(queries, query, currencies, wf)
+                return 100
+
+            currency_dst = wf.settings.get(SETTINGS_DEFAULT_CURRENCY, 'USD')
+
+            # First parameter is the value, means should convert from local default currency to the one specified in the query
+            if is_float(query[0]) and not is_float(query[1]):
+                currency_src = currency_dst
+                currency_dst = query[1]
+                val = float(query[0])
+            # Second parameter is the value, means should convert from the query currency to the default one
+            else:
+                currency_src = query[0]
+                val = float(query[1])
+
+            ret = process_conversion(queries, query, currency_src, currency_dst, val, currencies, wf)
+            retornos.append(ret)
         else:
-            currency_src = query[0]
-            val = float(query[1])
+            show_autocomplete(queries, query, currencies, wf)
+            retornos.append(100)
 
-        return process_conversion(query, currency_src, currency_dst, val, currencies, wf)
-    else:
-        show_autocomplete(query, currencies, wf)
-        return 100
-
+    for r in retornos:
+        if r != 0:
+            return r
 
 if __name__ == '__main__':
     update_settings = {'github_slug': 'kennedyoliveira/alfred-rates', 'frequency': 1}
 
     wf = Workflow(update_settings=update_settings)
     log = wf.logger
-    sys.exit(wf.run(main))
+    retorno = wf.run(main)
+    wf.send_feedback()
+    sys.exit(retorno)

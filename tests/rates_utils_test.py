@@ -50,9 +50,9 @@ class RatesCurrencyTest(unittest.TestCase):
 
     def test_validate_currencies(self):
         currencies = rates.get_currencies()
-        self.assertTrue(rates.validate_currencies([], 'BRL', 'USD', currencies, self.wf))
-        self.assertFalse(rates.validate_currencies([], 'BRL', 'USDD', currencies, self.wf))
-        self.assertFalse(rates.validate_currencies([], 'BRLL', 'USD', currencies, self.wf))
+        self.assertTrue(rates.validate_currencies([], [], 'BRL', 'USD', currencies, self.wf))
+        self.assertFalse(rates.validate_currencies([], [], 'BRL', 'USDD', currencies, self.wf))
+        self.assertFalse(rates.validate_currencies([], [], 'BRLL', 'USD', currencies, self.wf))
 
     def test_clear_caches(self):
         self.wf.cache_data('test_cache', 'testing cache')
