@@ -24,6 +24,7 @@ import string
 import unicodedata
 import urllib
 import urllib2
+import urlparse
 import zlib
 
 
@@ -522,7 +523,17 @@ def request(method, url, params=None, data=None, headers=None, cookies=None,
         url = url.encode('utf-8')
 
     if params:  # GET args (POST args are handled in encode_multipart_formdata)
-        url = url + '?' + urllib.urlencode(str_dict(params))
+
+        scheme, netloc, path, query, fragment = urlparse.urlsplit(url)
+
+        if query:  # Combine query string and `params`
+            url_params = urlparse.parse_qs(query)
+            # `params` take precedence over URL query string
+            url_params.update(params)
+            params = url_params
+
+        query = urllib.urlencode(str_dict(params), doseq=True)
+        url = urlparse.urlunsplit((scheme, netloc, path, query, fragment))
 
     req = urllib2.Request(url, data, headers)
     return Response(req)
