@@ -3,8 +3,8 @@
 [![PayPayl donate button](http://img.shields.io/paypal/donate.png?color=yellow)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=CR4K3FDKKK5FA&lc=BR&item_name=Kennedy%20Oliveira&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted "Donate with paypal if you feels like helping me out :D")
 [![Code Health](https://landscape.io/github/kennedyoliveira/alfred-rates/master/landscape.svg?style=flat)](https://landscape.io/github/kennedyoliveira/alfred-rates/master)
 [![Coverage Status](https://coveralls.io/repos/kennedyoliveira/alfred-rates/badge.svg?branch=master)](https://coveralls.io/r/kennedyoliveira/alfred-rates?branch=master)
-[![GitHub release](https://img.shields.io/github/release/kennedyoliveira/alfred-rates.svg)]()
-[![Github Releases](https://img.shields.io/github/downloads/kennedyoliveira/alfred-rates/latest/total.svg)]()
+[![GitHub release](http://github-basic-badges.herokuapp.com/release/kennedyoliveira/alfred-rates.svg?color=9900ff)]()
+[![Github Releases](http://github-basic-badges.herokuapp.com/downloads/kennedyoliveira/alfred-rates/total.svg?color=blue)]()
 
 #### Rates exchange for alfred. ####
 
