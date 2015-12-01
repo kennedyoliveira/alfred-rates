@@ -158,6 +158,9 @@ a.button span {
 #download-tar-gz span {
   background: transparent url(../images/tar-gz-icon.png) 12px 50% no-repeat;
 }
+#download-workflow span {
+  background: transparent url(../images/workflow-icon.png) 12px 50% no-repeat;
+}
 #view-on-github span {
   background: transparent url(../images/octocat-icon.png) 12px 50% no-repeat;
 }
@@ -357,7 +360,7 @@ footer a:hover {
   #downloads {
     margin-bottom: 25px;
   }
-  #download-zip, #download-tar-gz {
+  #download-zip, #download-tar-gz, #download-workflow {
     display: none;
   }
   .inner {
