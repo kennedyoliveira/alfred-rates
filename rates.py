@@ -139,6 +139,16 @@ def search_rate(src, dst, wf):
     return rate
 
 
+def get_currency_name(currency):
+    """
+    :param currency:
+    """
+    if 'Charset' not in currency or not currency['Charset']:
+        return currency['Name']
+    else:
+        return currency['Name'].decode(currency['Charset'])
+
+
 def process_conversion(queries, query, src, dst, val, currencies, wf):
     """
     Process the conversion from src to dst using the info withing currencies and return 0 with sucess and
@@ -178,10 +188,14 @@ def process_conversion(queries, query, src, dst, val, currencies, wf):
     ####################################################################################################
     # Gets the currency info
     ####################################################################################################
-    cur_src_name = currencies[src]['Name']
-    cur_dst_name = currencies[dst]['Name']
-    cur_dst_symbol = str.decode(currencies[dst]['Simbol'], encoding='utf-8')
-    flag_file_icon = wf.workflowfile('flags/{}'.format(currencies[dst]['Flag']))
+    src_currency_info = currencies[src]
+    dst_currency_info = currencies[dst]
+
+    cur_src_name = get_currency_name(src_currency_info)
+    cur_dst_name = get_currency_name(dst_currency_info)
+
+    cur_dst_symbol = str.decode(dst_currency_info['Simbol'], encoding='utf-8')
+    flag_file_icon = wf.workflowfile('flags/{}'.format(dst_currency_info['Flag']))
 
     if not val:
         val = 1
