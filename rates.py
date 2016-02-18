@@ -16,6 +16,8 @@ import urllib
 import csv
 import currencies_utilities
 import sys
+import decimal
+from decimal import Decimal
 from workflow import Workflow, web, ICON_ERROR, ICON_WARNING, ICON_INFO
 from collections import deque
 
@@ -67,7 +69,7 @@ def get_rates(src, dst):
     if rate_resp['Rate'] == 'N/A':
         return -1
 
-    return float(rate_resp['Rate'])
+    return Decimal(rate_resp['Rate'])
 
 
 def get_currencies():
@@ -136,6 +138,15 @@ def search_rate(src, dst, wf):
 
     # Search and caches for 1 hour the current rates for the currency
     rate = wf.cached_data(conv, get_rates_wrapper, max_age=3600)
+
+    # Special FIX
+    if Decimal('0.0001').compare(rate) == 0:
+        # Special treatment because yahoo returns 0.0001 at minimum, so i will do the process inverted to calculed
+        # the rates myself
+        log.debug('Rates for {} -> {} is equal to 0.0001, calculating inverted...'.format(src, dst))
+        inverted_rate = search_rate(dst, src, wf)
+        rate = decimal.Decimal(1) / inverted_rate
+
     return rate
 
 
@@ -200,12 +211,20 @@ def process_conversion(queries, query, src, dst, val, currencies, wf):
     if not val:
         val = 1
 
-    converted_rate = val * rate
+    converted_rate = Decimal(val) * rate
 
-    fmt_converted_rate = format_result(wf, converted_rate)
+    decimal_places = get_decimal_places_to_use(rate)
+
+    fmt_converted_rate = format_result(wf, converted_rate, decimal_places)
+
+    # module 1 will result in just the decimal part, if the decimal part is 0, then i'll show only 2 decimal places
+    if (rate % Decimal(1)).compare(Decimal('0')) == 0:
+        fmt_rate = format_result(wf, rate, 2)
+    else:
+        fmt_rate = format_result(wf, rate, decimal_places)
 
     title = cur_dst_symbol + ' ' + fmt_converted_rate
-    sub_title = u'({}) -> ({}) with rate {} for query: {}'.format(cur_src_name, cur_dst_name, rate,
+    sub_title = u'({}) -> ({}) with rate {} for query: {}'.format(cur_src_name, cur_dst_name, fmt_rate,
                                                                   ' '.join(query).upper())
 
     wf.add_item(title, sub_title, valid=True, arg=str(converted_rate), icon=flag_file_icon)
@@ -219,13 +238,33 @@ def process_conversion(queries, query, src, dst, val, currencies, wf):
     return 0
 
 
-def format_result(wf, converted_rate):
+def get_decimal_places_to_use(rate):
+    '''
+    get the total numbers of decimals to use after the decimal period
+    Ex: in the rate 4.25431543 there are 8 decimals after the decimal
+    period, so the result of this method will be 8.
+    If there are less than 4 decimals, the return will be 4 as default
+
+    :param rate The exchange rate
+    :type rate Decimal
+    '''
+    # get the total of decimal numbers
+    # the minus 2 ignores the 0. of the number
+    total_decimal_numbers = len(str(rate % Decimal(1))) - 2
+    # if there are more than 4 decimal numbers after the decimal period i'll consider all of em
+    # if there are less than 4, i consider 4 as default
+    return total_decimal_numbers if total_decimal_numbers > 4 else 4
+
+
+def format_result(wf, converted_rate, decimal_places=4):
     """
     Format the result acording to user configuration.
+    :param decimal_places Number of decimals after the decimal point, default is to 4
     :type wf: Workflow
-    :type converted_rate: float
+    :type converted_rate: Decimal
+    :type decimal_places: int
     """
-    fmt_val = locale.format('%%.%if' % 4, converted_rate, True, True)
+    fmt_val = locale.format('%%.%if' % decimal_places, converted_rate, True, True)
 
     # User divisor
     divisor = wf.settings.get(SETTINGS_DEFAULT_NUMBER_DIVISOR, '.')
@@ -234,9 +273,10 @@ def format_result(wf, converted_rate):
         locale_divisor = locale.localeconv().get('decimal_point')
     except:
         # Numero de casas decimais pra pegar o divisor
-        locale_divisor = fmt_val[-5]
+        locale_divisor = fmt_val[-decimal_places]
 
-    return fmt_number(fmt_val, divisor, locale_divisor)
+    # when there are no decimal places, i don't format the number
+    return fmt_val if decimal_places == 0 else fmt_number(fmt_val, divisor, locale_divisor)
 
 
 def fmt_number(fmt_val, divisor, src_divisor=None):
@@ -459,6 +499,9 @@ def main(wf):
 
     log.debug('Args parsed: %s', args)
     log.debug('Args received: %s', wf.args)
+
+    # Sets the local context precision for decimals to be 10, doens't need more than that
+    decimal.getcontext().prec = 6
 
     ############################################################################################
     # Update the default currency

@@ -133,5 +133,18 @@ class TestRatesConvert(unittest.TestCase):
             resp = rates.extract_filter_params(test[0], currencies)
             self.assertEqual(resp, test[1])
 
+    def test_convert_high_rates(self):
+        # Test the problem reported in #14, converting from idr to usd
+        # Yahoo will return as rate 0.0001, because it's the minimum
+        # but the rate is something around 0.000007...
+        with patch.object(sys, 'argv', ['program', '1 idr usd']):
+                rates.main(self.wf)
+        # must have only 1 item
+        self.assertEqual(len(self.wf._items), 1)
+        # must not be rate 0.0001 for query
+        self.assertEqual(self.wf._items[0].subtitle.find('(Indonesian rupiah) -> (United States dollar) with rate 0.0001 for query'), -1)
+        # must be a conversion message
+        self.assertNotEqual(self.wf._items[0].subtitle.find('(Indonesian rupiah) -> (United States dollar) with rate'), -1)
+
 if __name__ == '__main__':
     unittest.main()
