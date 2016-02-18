@@ -249,12 +249,10 @@ def get_decimal_places_to_use(rate):
     :type rate Decimal
     '''
     log.debug("Checking decimal places for number: [{}]".format(rate))
-    print "Checking decimal places for number: [{}]".format(rate)
 
     # remove the integer part
     decimal_part = rate % Decimal(1)
     log.debug("Removed integer part: [{}]".format(decimal_part))
-    print "Removed integer part: [{}]".format(decimal_part)
 
     # get the total of decimal numbers
     # the minus 2 ignores the 0. of the number
