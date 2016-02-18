@@ -248,9 +248,16 @@ def get_decimal_places_to_use(rate):
     :param rate The exchange rate
     :type rate Decimal
     '''
+    log.debug("Checking decimal places for number: [{}]".format(rate))
+
+    # remove the integer part
+    decimal_part = rate % Decimal(1)
+    log.debug("Removed integer part: [{}]".format(decimal_part))
+
     # get the total of decimal numbers
     # the minus 2 ignores the 0. of the number
-    total_decimal_numbers = len(str(rate % Decimal(1))) - 2
+    total_decimal_numbers = len(str(decimal_part)) - 2
+
     # if there are more than 4 decimal numbers after the decimal period i'll consider all of em
     # if there are less than 4, i consider 4 as default
     return total_decimal_numbers if total_decimal_numbers > 4 else 4
