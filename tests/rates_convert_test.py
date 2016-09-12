@@ -2,12 +2,13 @@
 # encoding: iso-8859-1
 __author__ = 'Kennedy'
 
-import unittest
 import sys
+import unittest
 
-import rates
 from mock import patch
-from workflow import Workflow
+
+from lib.workflow import Workflow
+from src import rates
 
 
 class TestRatesConvert(unittest.TestCase):
@@ -18,6 +19,7 @@ class TestRatesConvert(unittest.TestCase):
         self.wf.clear_cache()
         self.wf.settings[rates.SETTINGS_DEFAULT_CURRENCY] = 'BRL'
         rates.log = self.wf.logger
+        rates.wf = self.wf
 
     def tearDown(self):
         pass

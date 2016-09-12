@@ -105,7 +105,7 @@ Id,Name,Code,Simbol,Country,Flag,Charset
 106,Gibraltar pound,GIP,£,Gibraltar,gibraltar.png,
 107,Romanian leu,RON,lei,Romania,romania.png,
 108,Sri Lankan rupee,LKR,Rs or රු,Sri Lanka,sri_lanka.png,
-109,Transnistrian ruble,PRB[C],р.,Transnistria,transnistria.png,
+109,Transnistrian ruble,PRB,р.,Transnistria,transnistria.png,
 110,Nigerian naira,NGN,₦,Nigeria,nigeria.png,
 111,Costa Rican colón,CRC,₡,Costa Rica,costa_rica.png,
 112,Czech koruna,CZK,Kč,Czech Republic,czech_republic.png,
@@ -127,7 +127,7 @@ Id,Name,Code,Simbol,Country,Flag,Charset
 128,Japanese yen,JPY,¥,Japan,japan.png,
 129,Mongolian tögrög,MNT,₮,Mongolia,mongolia.png,
 130,Angolan kwanza,AOA,Kz,Angola,angola.png,
-131,Polish złoty,PLN,zł,Poland,poland.png,
+131,Polish złoty,PLN,zł,Poland,poland.png,UTF-8
 132,British pound [B],GBP,£,United Kingdom,united_kingdom.png,
 133,Solomon Islands dollar,SBD,$,Solomon Islands,solomon_islands.png,
 134,Hungarian forint,HUF,Ft,Hungary,hungary.png,
@@ -151,3 +151,4 @@ Id,Name,Code,Simbol,Country,Flag,Charset
 152,Indian rupee,INR,₹,India,india.png,
 153,Singapore dollar,SGD,$,Singapore,singapore.png,
 154,Turkish Lira,TRY,₺,Turkey,turkey.png,
+155,Kazakhstan Tenge,KZT,₸,Kazakhstan,kazakhstan.png,

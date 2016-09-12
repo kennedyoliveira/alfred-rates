@@ -6,8 +6,8 @@ __author__ = 'Kennedy'
 
 import unittest
 
-import rates
-from workflow import Workflow
+from src import rates
+from lib.workflow import Workflow
 
 
 class RatesFmtTest(unittest.TestCase):

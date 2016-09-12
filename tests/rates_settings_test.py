@@ -6,8 +6,8 @@ __author__ = 'Kennedy'
 
 import unittest
 
-import rates
-from workflow import Workflow
+from src import rates
+from lib.workflow import Workflow
 from mock import patch
 
 
@@ -18,6 +18,7 @@ class TestRatesSettings(unittest.TestCase):
         self.wf = Workflow()
         self.wf.clear_settings()
         rates.log = self.wf.logger
+        rates.wf = self.wf
 
     def tearDown(self):
         pass

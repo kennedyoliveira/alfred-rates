@@ -1,2 +1,5 @@
 .idea
 *.pyc
+/env/
+/tests/currencies.csv
+.DS_Store

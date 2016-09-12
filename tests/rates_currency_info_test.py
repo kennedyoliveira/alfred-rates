@@ -2,7 +2,8 @@
 # encoding: iso-8859-1
 
 import unittest
-from rates import get_currency_name
+
+from src.rates import get_currency_name
 
 __author__ = 'Kennedy'
 
