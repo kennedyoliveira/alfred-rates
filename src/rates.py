@@ -94,12 +94,13 @@ def load_currency_info():
     """
     Loads the currency info
     """
-    moedas = wf.stored_data(STORED_DATA_CURRENCY_INFO)
-    if not moedas:
+    currencies = wf.stored_data(STORED_DATA_CURRENCY_INFO)
+    if not currencies:
         log.debug('Loading currency data...')
-        moedas = get_currencies()
-        wf.store_data(STORED_DATA_CURRENCY_INFO, moedas)
-    return moedas
+        currencies = get_currencies()
+        wf.store_data(STORED_DATA_CURRENCY_INFO, currencies)
+
+    return currencies
 
 
 def is_float(val):
@@ -113,6 +114,32 @@ def is_float(val):
         return True
     except ValueError:
         return False
+
+
+def get_flag_for_currency(currency):
+    """
+    Get a flag file for a currency, for example 'USD', if there are no flag or currency is None, then return a 'no_flag' file.
+
+    :type currency: str
+    :param currency Currency for getting the flag suce as 'USD', 'GBP', 'EUR' etc.
+    :rtype: str
+    :return path to the file representing the flag
+    """
+    if currency is not None:
+        currencies = load_currency_info()
+        currency = currency.upper()
+
+        if currency in currencies:
+            flag_file = currencies[currency]['Flag']
+
+            flag_path = wf.workflowfile('assets/flags/{}'.format(flag_file))
+
+            if os.path.exists(flag_path):
+                return flag_path
+            else:
+                log.error("No flag for the currency: %s", currency)
+
+    return wf.workflowfile('assets/flags/_no_flag.png')
 
 
 def validate_currencies(queries, query, src, dst, currencies):
@@ -164,8 +191,6 @@ def process_conversion(queries, query, src, dst, val, currencies):
     Process the conversion from src to dst using the info withing currencies and return 0 with sucess and
     != 0 otherwise.
 
-    :param wf: Alfred Workflow helper instance
-    :type wf: Workflow
     :param currencies: Dictionary with info about currencies
     :type currencies: dict
     :type val: float
@@ -205,7 +230,7 @@ def process_conversion(queries, query, src, dst, val, currencies):
     cur_dst_name = get_currency_name(dst_currency_info)
 
     cur_dst_symbol = str.decode(dst_currency_info['Simbol'], encoding='utf-8')
-    flag_file_icon = wf.workflowfile('flags/{}'.format(dst_currency_info['Flag']))
+    flag_file_icon = get_flag_for_currency(dst)
 
     if not val:
         val = 1
@@ -214,13 +239,13 @@ def process_conversion(queries, query, src, dst, val, currencies):
 
     decimal_places = get_decimal_places_to_use(rate)
 
-    fmt_converted_rate = format_result(wf, converted_rate, decimal_places)
+    fmt_converted_rate = format_result(converted_rate, decimal_places)
 
     # module 1 will result in just the decimal part, if the decimal part is 0, then i'll show only 2 decimal places
     if (rate % Decimal(1)).compare(Decimal('0')) == 0:
-        fmt_rate = format_result(wf, rate, 2)
+        fmt_rate = format_result(rate, 2)
     else:
-        fmt_rate = format_result(wf, rate, decimal_places)
+        fmt_rate = format_result(rate, decimal_places)
 
     title = cur_dst_symbol + ' ' + fmt_converted_rate
     sub_title = u'({}) -> ({}) with rate {} for query: {}'.format(cur_src_name, cur_dst_name, fmt_rate,
@@ -232,7 +257,7 @@ def process_conversion(queries, query, src, dst, val, currencies):
     # Checks if an update is available, and add it to the output
     ############################################################################################
     if wf.update_available:
-        handle_check_update(wf)
+        handle_check_update()
 
     return 0
 
@@ -262,11 +287,10 @@ def get_decimal_places_to_use(rate):
     return total_decimal_numbers if total_decimal_numbers > 4 else 4
 
 
-def format_result(wf, converted_rate, decimal_places=4):
+def format_result(converted_rate, decimal_places=4):
     """
     Format the result acording to user configuration.
     :param decimal_places Number of decimals after the decimal point, default is to 4
-    :type wf: Workflow
     :type converted_rate: Decimal
     :type decimal_places: int
     """
@@ -350,7 +374,6 @@ def show_autocomplete(queries, query, currencies):
     :param queries: list with all the queries entered even the one being processed now
     :param query: a list with the query being processed now
     :param currencies: Dict with all the
-    :param wf:
     :return:
     """
     currencies_list = currencies.values()
@@ -372,13 +395,7 @@ def show_autocomplete(queries, query, currencies):
         wf.add_item('No currency found.')
     else:
         for currency in currencies_list:
-            try:
-                flag_file_icon = wf.workflowfile('flags/{}'.format(currency['Flag']))
-            except UnicodeDecodeError:
-                pass
-
-            if not os.path.exists(flag_file_icon):
-                flag_file_icon = wf.workflowfile('flags/_no_flag.png')
+            flag_file_icon = get_flag_for_currency(currency['Simbol'])
 
             autocomplete = ''
 
@@ -428,13 +445,16 @@ def handle_update():
     return 20
 
 
-def handle_check_update(wf):
+def handle_check_update():
     log.debug('Checking if there is a new update available...')
     wf.check_update(True)
+
     update_info = wf.cached_data('__workflow_update_status', None)
     update_version = ''
+
     if update_info and 'version' in update_info:
         update_version = update_info['version']
+
     wf.add_item('There is a new update available! {} {}'.format('Version: ', update_version),
                 'We recommend updating the workflow by running rateupdate!')
 

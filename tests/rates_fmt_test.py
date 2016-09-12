@@ -18,23 +18,24 @@ class RatesFmtTest(unittest.TestCase):
         self.wf.clear_cache()
         self.wf.settings[rates.SETTINGS_DEFAULT_CURRENCY] = 'BRL'
         rates.log = self.wf.logger
+        rates.wf = self.wf
 
     def tearDown(self):
         pass
 
     def testFmtNumberComma(self):
         self.wf.settings[rates.SETTINGS_DEFAULT_NUMBER_DIVISOR] = ','
-        result = rates.format_result(self.wf, Decimal('1001.0123'))
+        result = rates.format_result(Decimal('1001.0123'))
         self.assertEquals(result, '1.001,0123')
 
     def testFmtNumberDot(self):
         self.wf.settings[rates.SETTINGS_DEFAULT_NUMBER_DIVISOR] = '.'
-        result = rates.format_result(self.wf, Decimal('1001.0123'))
+        result = rates.format_result(Decimal('1001.0123'))
         self.assertEquals(result, '1,001.0123')
 
-    #def testGetDecimalPlaces(self):
-    #    self.assertEqual(rates.get_decimal_places_to_use(Decimal('4.25431543')), 8)
-    #    self.assertEqual(rates.get_decimal_places_to_use(Decimal('0.5')), 4)
+        # def testGetDecimalPlaces(self):
+        #    self.assertEqual(rates.get_decimal_places_to_use(Decimal('4.25431543')), 8)
+        #    self.assertEqual(rates.get_decimal_places_to_use(Decimal('0.5')), 4)
 
 
 if __name__ == '__main__':
