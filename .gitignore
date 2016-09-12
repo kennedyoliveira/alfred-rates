@@ -3,3 +3,5 @@
 /env/
 /tests/currencies.csv
 .DS_Store
+/cover/
+/.coverage
